@@ -74,7 +74,7 @@ impl Token {
     }
 }
 
-const KEYWORDS: [(&'static str, Token); 7] = [
+const KEYWORDS: &'static [(&'static str, Token)] = &[
     ("fn", Token::Function),
     ("let", Token::Let),
     ("true", Token::True),
