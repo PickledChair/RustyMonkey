@@ -39,7 +39,39 @@ impl<'a> Lexer<'a> {
         self.pos += 1;
     }
 
+    fn is_letter(ch: char) -> bool {
+        return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+    }
+
+    fn read_identifier(&mut self) -> &str {
+        let pos = self.pos;
+        while Lexer::is_letter(self.ch) {
+            self.read_char();
+        }
+        &self.input[pos..self.pos]
+    }
+
+    fn is_digit(ch: char) -> bool {
+        return '0' <= ch && ch <= '9'
+    }
+
+    fn read_number(&mut self) -> &str {
+        let pos = self.pos;
+        while Lexer::is_digit(self.ch) {
+            self.read_char();
+        }
+        &self.input[pos..self.pos]
+    }
+
+    fn skip_whitespace(&mut self) {
+        while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
+            self.read_char();
+        }
+    }
+
     pub fn next_token(&mut self) -> Token {
+        self.skip_whitespace();
+
         match self.ch {
             '=' => {
                 self.read_char();
@@ -74,7 +106,16 @@ impl<'a> Lexer<'a> {
                 Token::Rbrace
             },
             '\0' => Token::Eof,
-            _ => Token::Illegal,
+            _ => {
+                if Lexer::is_letter(self.ch) {
+                    let literal = self.read_identifier();
+                    lookup_ident(literal)
+                } else if Lexer::is_digit(self.ch) {
+                    Token::Int(self.read_number().parse::<i64>().unwrap())
+                } else {
+                    Token::Illegal
+                }
+            },
         }
     }
 }
@@ -94,35 +135,67 @@ impl<'a> Iterator for Lexer<'a> {
 
 #[cfg(test)]
 mod lexer_test {
-    use super::Token;
     use super::Token::*;
     use super::Lexer;
 
-    struct TypeLiteralPair {
-        pub token: Token,
-        pub literal: String,
-    }
-
     #[test]
     fn test_next_token() {
-        let input = "=+(){},;";
-        let mut test_pairs = Vec::new();
-        test_pairs.push(TypeLiteralPair { token: Assign, literal: String::from("=") });
-        test_pairs.push(TypeLiteralPair { token: Plus, literal: String::from("+") });
-        test_pairs.push(TypeLiteralPair { token: Lparen, literal: String::from("(") });
-        test_pairs.push(TypeLiteralPair { token: Rparen, literal: String::from(")") });
-        test_pairs.push(TypeLiteralPair { token: Lbrace, literal: String::from("{") });
-        test_pairs.push(TypeLiteralPair { token: Rbrace, literal: String::from("}") });
-        test_pairs.push(TypeLiteralPair { token: Comma, literal: String::from(",") });
-        test_pairs.push(TypeLiteralPair { token: Semicolon, literal: String::from(";") });
-        test_pairs.push(TypeLiteralPair { token: Eof, literal: String::from("") });
+        let input = "let five = 5;
+let ten = 10;
+
+let add = fn(x, y) {
+  x + y;
+};
+
+let result = add(five, ten);
+";
+
+        let test_pairs = [
+            (Let, "let"),
+            (Ident("five".to_string()), "five"),
+            (Assign, "="),
+            (Int(5), "5"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident("ten".to_string()), "ten"),
+            (Assign, "="),
+            (Int(10), "10"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident("add".to_string()), "add"),
+            (Assign, "="),
+            (Function, "fn"),
+            (Lparen, "("),
+            (Ident("x".to_string()), "x"),
+            (Comma, ","),
+            (Ident("y".to_string()), "y"),
+            (Rparen, ")"),
+            (Lbrace, "{"),
+            (Ident("x".to_string()), "x"),
+            (Plus, "+"),
+            (Ident("y".to_string()), "y"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Semicolon, ";"),
+            (Let, "let"),
+            (Ident("result".to_string()), "result"),
+            (Assign, "="),
+            (Ident("add".to_string()), "add"),
+            (Lparen, "("),
+            (Ident("five".to_string()), "five"),
+            (Comma, ","),
+            (Ident("ten".to_string()), "ten"),
+            (Rparen, ")"),
+            (Semicolon, ";"),
+            (Eof, ""),
+        ];
 
         let mut l = Lexer::new(input).unwrap();
 
-        for pair in test_pairs {
+        for (token, literal) in test_pairs.iter() {
             let tok = l.next().unwrap();
-            assert_eq!(tok, pair.token);
-            assert_eq!(tok.get_literal(), pair.literal);
+            assert_eq!(tok, *token);
+            assert_eq!(tok.get_literal(), (*literal).to_string());
         }
     }
 }

@@ -1,4 +1,4 @@
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Token {
     Illegal,
     Eof,
@@ -40,8 +40,22 @@ impl Token {
             Token::Rparen => String::from(")"),
             Token::Lbrace => String::from("{"),
             Token::Rbrace => String::from("}"),
-            Token::Function => String::from("function"),
+            Token::Function => String::from("fn"),
             Token::Let => String::from("let")
         }
     }
+}
+
+const keywords: [(&'static str, Token); 2] = [
+    ("fn", Token::Function),
+    ("let", Token::Let),
+];
+
+pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {
+    for (key, token) in keywords.iter() {
+        if *key == ident.as_ref() {
+            return (*token).clone();
+        }
+    }
+    Token::Ident(ident.as_ref().to_string())
 }
