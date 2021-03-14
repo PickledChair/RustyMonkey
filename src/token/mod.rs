@@ -8,8 +8,18 @@ pub enum Token {
     Int(i64),       // 134356
 
     // 演算子
-    Assign,
-    Plus,
+    Assign,         // =
+    Plus,           // +
+    Minus,          // -
+    Bang,           // !
+    Asterisk,       // *
+    Slash,          // /
+
+    Lt,             // <
+    Gt,             // >
+
+    Eq,             // ==
+    NotEq,          // !=
 
     // デリミタ
     Comma,
@@ -23,6 +33,11 @@ pub enum Token {
     // キーワード
     Function,
     Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
 }
 
 impl Token {
@@ -34,6 +49,14 @@ impl Token {
             Token::Int(num) => num.to_string(),
             Token::Assign => String::from("="),
             Token::Plus => String::from("+"),
+            Token::Minus => String::from("-"),
+            Token::Bang => String::from("!"),
+            Token::Asterisk => String::from("*"),
+            Token::Slash => String::from("/"),
+            Token::Lt => String::from("<"),
+            Token::Gt => String::from(">"),
+            Token::Eq => String::from("=="),
+            Token::NotEq => String::from("!="),
             Token::Comma => String::from(","),
             Token::Semicolon => String::from(";"),
             Token::Lparen => String::from("("),
@@ -41,18 +64,28 @@ impl Token {
             Token::Lbrace => String::from("{"),
             Token::Rbrace => String::from("}"),
             Token::Function => String::from("fn"),
-            Token::Let => String::from("let")
+            Token::Let => String::from("let"),
+            Token::True => String::from("true"),
+            Token::False => String::from("false"),
+            Token::If => String::from("if"),
+            Token::Else => String::from("else"),
+            Token::Return => String::from("return"),
         }
     }
 }
 
-const keywords: [(&'static str, Token); 2] = [
+const KEYWORDS: [(&'static str, Token); 7] = [
     ("fn", Token::Function),
     ("let", Token::Let),
+    ("true", Token::True),
+    ("false", Token::False),
+    ("if", Token::If),
+    ("else", Token::Else),
+    ("return", Token::Return),
 ];
 
 pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {
-    for (key, token) in keywords.iter() {
+    for (key, token) in KEYWORDS.iter() {
         if *key == ident.as_ref() {
             return (*token).clone();
         }

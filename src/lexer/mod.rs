@@ -39,6 +39,16 @@ impl<'a> Lexer<'a> {
         self.pos += 1;
     }
 
+    fn peek_char(&mut self) -> char {
+        let chars = self.chars.deref_mut();
+        let ch = chars.peek();
+        if let Some(ch) = ch {
+            *ch
+        } else {
+            '\0'
+        }
+    }
+
     fn is_letter(ch: char) -> bool {
         return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
     }
@@ -74,8 +84,48 @@ impl<'a> Lexer<'a> {
 
         match self.ch {
             '=' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    self.read_char();
+                    Token::Eq
+                } else {
+                    self.read_char();
+                    Token::Assign
+                }
+            },
+            '+' => {
                 self.read_char();
-                Token::Assign
+                Token::Plus
+            },
+            '-' => {
+                self.read_char();
+                Token::Minus
+            },
+            '!' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    self.read_char();
+                    Token::NotEq
+                } else {
+                    self.read_char();
+                    Token::Bang
+                }
+            },
+            '/' => {
+                self.read_char();
+                Token::Slash
+            },
+            '*' => {
+                self.read_char();
+                Token::Asterisk
+            },
+            '<' => {
+                self.read_char();
+                Token::Lt
+            },
+            '>' => {
+                self.read_char();
+                Token::Gt
             },
             ';' => {
                 self.read_char();
@@ -92,10 +142,6 @@ impl<'a> Lexer<'a> {
             ',' => {
                 self.read_char();
                 Token::Comma
-            },
-            '+' => {
-                self.read_char();
-                Token::Plus
             },
             '{' => {
                 self.read_char();
@@ -148,6 +194,17 @@ let add = fn(x, y) {
 };
 
 let result = add(five, ten);
+!-/*5;
+5 < 10 > 5;
+
+if (5 < 10) {
+  return true;
+} else {
+  return false;
+}
+
+10 == 10;
+10 != 9;
 ";
 
         let test_pairs = [
@@ -186,6 +243,43 @@ let result = add(five, ten);
             (Comma, ","),
             (Ident("ten".to_string()), "ten"),
             (Rparen, ")"),
+            (Semicolon, ";"),
+            (Bang, "!"),
+            (Minus, "-"),
+            (Slash, "/"),
+            (Asterisk, "*"),
+            (Int(5), "5"),
+            (Semicolon, ";"),
+            (Int(5), "5"),
+            (Lt, "<"),
+            (Int(10), "10"),
+            (Gt, ">"),
+            (Int(5), "5"),
+            (Semicolon, ";"),
+            (If, "if"),
+            (Lparen, "("),
+            (Int(5), "5"),
+            (Lt, "<"),
+            (Int(10), "10"),
+            (Rparen, ")"),
+            (Lbrace, "{"),
+            (Return, "return"),
+            (True, "true"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Else, "else"),
+            (Lbrace, "{"),
+            (Return, "return"),
+            (False, "false"),
+            (Semicolon, ";"),
+            (Rbrace, "}"),
+            (Int(10), "10"),
+            (Eq, "=="),
+            (Int(10), "10"),
+            (Semicolon, ";"),
+            (Int(10), "10"),
+            (NotEq, "!="),
+            (Int(9), "9"),
             (Semicolon, ";"),
             (Eof, ""),
         ];
