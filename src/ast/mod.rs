@@ -29,13 +29,15 @@ impl NodeExt for Program {
 
 #[derive(Debug)]
 pub enum Statement {
-    Let(Box<LetStatement>)
+    Let(Box<LetStatement>),
+    Return(Box<ReturnStatement>),
 }
 
 impl NodeExt for Statement {
     fn token_literal(&self) -> String {
         match self {
-            Statement::Let(let_stmt) => let_stmt.token_literal()
+            Statement::Let(let_stmt) => let_stmt.token_literal(),
+            Statement::Return(ret_stmt) => ret_stmt.token_literal(),
         }
     }
 }
@@ -64,6 +66,29 @@ impl NodeExt for LetStatement {
 }
 
 impl StatementExt for LetStatement {}
+
+#[derive(Debug)]
+pub struct ReturnStatement {
+    pub token: Token,
+    pub ret_value: Expression,
+}
+
+impl ReturnStatement {
+    pub fn new(token: Token) -> ReturnStatement {
+        ReturnStatement {
+            token,
+            ret_value: Expression::Identifier(Box::new(Identifier::new(Token::Ident("dummy".to_string()))))
+        }
+    }
+}
+
+impl NodeExt for ReturnStatement {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+}
+
+impl StatementExt for ReturnStatement {}
 
 #[derive(Debug)]
 pub enum Expression {

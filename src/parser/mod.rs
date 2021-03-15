@@ -32,36 +32,35 @@ impl<'a> Parser<'a> {
 
     fn expect_peek(&mut self, kind: TokenKind) -> Result<(), String> {
         if let Some(tok) = self.lex.peek() {
-            let mut result = false;
-            match kind {
-                TokenKind::Ident => result = matches!(tok, Token::Ident(_)),
-                TokenKind::Int => result = matches!(tok, Token::Int(_)),
-                TokenKind::Assign => result = matches!(tok, Token::Assign),
-                TokenKind::Plus => result = matches!(tok, Token::Plus),
-                TokenKind::Minus => result = matches!(tok, Token::Minus),
-                TokenKind::Bang => result = matches!(tok, Token::Bang),
-                TokenKind::Asterisk => result = matches!(tok, Token::Asterisk),
-                TokenKind::Slash => result = matches!(tok, Token::Slash),
-                TokenKind::Lt => result = matches!(tok, Token::Lt),
-                TokenKind::Gt => result = matches!(tok, Token::Gt),
-                TokenKind::Eq => result = matches!(tok, Token::Eq),
-                TokenKind::NotEq => result = matches!(tok, Token::NotEq),
-                TokenKind::Comma => result = matches!(tok, Token::Comma),
-                TokenKind::Semicolon => result = matches!(tok, Token::Semicolon),
-                TokenKind::Lparen => result = matches!(tok, Token::Lparen),
-                TokenKind::Rparen => result = matches!(tok, Token::Rparen),
-                TokenKind::Lbrace => result = matches!(tok, Token::Lbrace),
-                TokenKind::Rbrace => result = matches!(tok, Token::Rbrace),
-                TokenKind::Function => result = matches!(tok, Token::Function),
-                TokenKind::Let => result = matches!(tok, Token::Let),
-                TokenKind::True => result = matches!(tok, Token::True),
-                TokenKind::False => result = matches!(tok, Token::False),
-                TokenKind::If => result = matches!(tok, Token::If),
-                TokenKind::Else => result = matches!(tok, Token::Else),
-                TokenKind::Return => result = matches!(tok, Token::Return),
-                TokenKind::Illegal => result = matches!(tok, Token::Illegal),
-                TokenKind::Eof => result = matches!(tok, Token::Eof),
-            }
+            let result = match kind {
+                TokenKind::Ident => matches!(tok, Token::Ident(_)),
+                TokenKind::Int => matches!(tok, Token::Int(_)),
+                TokenKind::Assign => matches!(tok, Token::Assign),
+                TokenKind::Plus => matches!(tok, Token::Plus),
+                TokenKind::Minus => matches!(tok, Token::Minus),
+                TokenKind::Bang => matches!(tok, Token::Bang),
+                TokenKind::Asterisk => matches!(tok, Token::Asterisk),
+                TokenKind::Slash => matches!(tok, Token::Slash),
+                TokenKind::Lt => matches!(tok, Token::Lt),
+                TokenKind::Gt => matches!(tok, Token::Gt),
+                TokenKind::Eq => matches!(tok, Token::Eq),
+                TokenKind::NotEq => matches!(tok, Token::NotEq),
+                TokenKind::Comma => matches!(tok, Token::Comma),
+                TokenKind::Semicolon => matches!(tok, Token::Semicolon),
+                TokenKind::Lparen => matches!(tok, Token::Lparen),
+                TokenKind::Rparen => matches!(tok, Token::Rparen),
+                TokenKind::Lbrace => matches!(tok, Token::Lbrace),
+                TokenKind::Rbrace => matches!(tok, Token::Rbrace),
+                TokenKind::Function => matches!(tok, Token::Function),
+                TokenKind::Let => matches!(tok, Token::Let),
+                TokenKind::True => matches!(tok, Token::True),
+                TokenKind::False => matches!(tok, Token::False),
+                TokenKind::If => matches!(tok, Token::If),
+                TokenKind::Else => matches!(tok, Token::Else),
+                TokenKind::Return => matches!(tok, Token::Return),
+                TokenKind::Illegal => matches!(tok, Token::Illegal),
+                TokenKind::Eof => matches!(tok, Token::Eof),
+            };
             if !result {
                 return Err(peek_error_msg(format!("{:?}", kind), format!("{:?}", tok)));
             }
@@ -88,6 +87,7 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> Result<Statement, String> {
         match self.cur_token {
             Token::Let => Ok(Statement::Let(Box::new(self.parse_let_statement()?))),
+            Token::Return => Ok(Statement::Return(Box::new(self.parse_return_statment()?))),
             _ => Err("unimplemented yet".to_string())
         }
     }
@@ -102,6 +102,20 @@ impl<'a> Parser<'a> {
         self.expect_peek(TokenKind::Assign)?;
 
         let stmt = LetStatement::new(let_tok, ident);
+
+        while !matches!(self.cur_token, Token::Semicolon) {
+            self.next_token();
+        }
+
+        Ok(stmt)
+    }
+
+    fn parse_return_statment(&mut self) -> Result<ReturnStatement, String> {
+        let ret_tok = self.cur_token.clone();
+
+        self.next_token();
+
+        let stmt = ReturnStatement::new(ret_tok);
 
         while !matches!(self.cur_token, Token::Semicolon) {
             self.next_token();
@@ -158,7 +172,8 @@ let foobar = 838383;
         );
 
         let let_stmt_name = match s {
-            Statement::Let(let_stmt) => &let_stmt.name
+            Statement::Let(let_stmt) => &let_stmt.name,
+            other => panic!("s is not Statement::Let. got={:?}", other),
         };
 
         let let_stmt_name_result = let_stmt_name.token_literal() == name;
@@ -168,6 +183,31 @@ let foobar = 838383;
         );
 
         true
+    }
+
+    #[test]
+    fn test_return_statements() {
+        let input = "
+return 5;
+return 10;
+return 993322;
+";
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+
+        let program = p.parse_program();
+        check_parser_errors(&p);
+
+        if program.statements.len() != 3 {
+            panic!("program.statements does not contain 3 statements. got={}", program.statements.len());
+        }
+
+        for stmt in program.statements {
+            assert!(
+                matches!(stmt, Statement::Return(_)),
+                "stmt not Statement::Return. got={:?}", stmt
+            );
+        }
     }
 
     fn check_parser_errors(p: &Parser) {
