@@ -2,9 +2,9 @@ use super::{ast::*, lexer::*, token::*};
 
 use std::iter::Peekable;
 
-fn peek_error_msg<T: AsRef<str>>(expect: &str, instead: T) -> String {
+fn peek_error_msg<T1: AsRef<str>, T2: AsRef<str>>(expect: T1, instead: T2) -> String {
     String::from("expected next token to be ")
-        + expect + ", got " + instead.as_ref() + " instead"
+        + expect.as_ref() + ", got " + instead.as_ref() + " instead"
 }
 
 pub struct Parser<'a> {
@@ -28,6 +28,46 @@ impl<'a> Parser<'a> {
         if let Some(tok) = self.lex.next() {
             self.cur_token = tok;
         }
+    }
+
+    fn expect_peek(&mut self, kind: TokenKind) -> Result<(), String> {
+        if let Some(tok) = self.lex.peek() {
+            let mut result = false;
+            match kind {
+                TokenKind::Ident => result = matches!(tok, Token::Ident(_)),
+                TokenKind::Int => result = matches!(tok, Token::Int(_)),
+                TokenKind::Assign => result = matches!(tok, Token::Assign),
+                TokenKind::Plus => result = matches!(tok, Token::Plus),
+                TokenKind::Minus => result = matches!(tok, Token::Minus),
+                TokenKind::Bang => result = matches!(tok, Token::Bang),
+                TokenKind::Asterisk => result = matches!(tok, Token::Asterisk),
+                TokenKind::Slash => result = matches!(tok, Token::Slash),
+                TokenKind::Lt => result = matches!(tok, Token::Lt),
+                TokenKind::Gt => result = matches!(tok, Token::Gt),
+                TokenKind::Eq => result = matches!(tok, Token::Eq),
+                TokenKind::NotEq => result = matches!(tok, Token::NotEq),
+                TokenKind::Comma => result = matches!(tok, Token::Comma),
+                TokenKind::Semicolon => result = matches!(tok, Token::Semicolon),
+                TokenKind::Lparen => result = matches!(tok, Token::Lparen),
+                TokenKind::Rparen => result = matches!(tok, Token::Rparen),
+                TokenKind::Lbrace => result = matches!(tok, Token::Lbrace),
+                TokenKind::Rbrace => result = matches!(tok, Token::Rbrace),
+                TokenKind::Function => result = matches!(tok, Token::Function),
+                TokenKind::Let => result = matches!(tok, Token::Let),
+                TokenKind::True => result = matches!(tok, Token::True),
+                TokenKind::False => result = matches!(tok, Token::False),
+                TokenKind::If => result = matches!(tok, Token::If),
+                TokenKind::Else => result = matches!(tok, Token::Else),
+                TokenKind::Return => result = matches!(tok, Token::Return),
+                TokenKind::Illegal => result = matches!(tok, Token::Illegal),
+                TokenKind::Eof => result = matches!(tok, Token::Eof),
+            }
+            if !result {
+                return Err(peek_error_msg(format!("{:?}", kind), format!("{:?}", tok)));
+            }
+        }
+        self.next_token();
+        Ok(())
     }
 
     fn parse_program(&mut self) -> Program {
@@ -55,21 +95,11 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Result<LetStatement, String> {
         let let_tok = self.cur_token.clone();
 
-        if let Some(tok) = self.lex.peek() {
-            if !matches!(tok, Token::Ident(_)) {
-                return Err(peek_error_msg("Token::Ident", format!("{:?}", tok)));
-            }
-        }
-        self.next_token();
+        self.expect_peek(TokenKind::Ident)?;
 
         let ident = Identifier::new(self.cur_token.clone());
 
-        if let Some(tok) = self.lex.peek() {
-            if !matches!(tok, Token::Assign) {
-                return Err(peek_error_msg("Token::Assign", format!("{:?}", tok)));
-            }
-        }
-        self.next_token();
+        self.expect_peek(TokenKind::Assign)?;
 
         let stmt = LetStatement::new(let_tok, ident);
 

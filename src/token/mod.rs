@@ -92,3 +92,45 @@ pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {
     }
     Token::Ident(ident.as_ref().to_string())
 }
+
+#[derive(Debug)]
+pub enum TokenKind {
+    Illegal,
+    Eof,
+
+    // 識別子 + リテラル
+    Ident,          // add, foobar, x, y, ...
+    Int,            // 134356
+
+    // 演算子
+    Assign,         // =
+    Plus,           // +
+    Minus,          // -
+    Bang,           // !
+    Asterisk,       // *
+    Slash,          // /
+
+    Lt,             // <
+    Gt,             // >
+
+    Eq,             // ==
+    NotEq,          // !=
+
+    // デリミタ
+    Comma,
+    Semicolon,
+
+    Lparen,
+    Rparen,
+    Lbrace,
+    Rbrace,
+
+    // キーワード
+    Function,
+    Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
+}
