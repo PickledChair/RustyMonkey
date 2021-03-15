@@ -2,11 +2,10 @@ use super::token::*;
 
 use std::iter::Peekable;
 use std::str::Chars;
-use std::ops::DerefMut;
 
 pub struct Lexer<'a> {
     input: &'a str,
-    chars: Box<Peekable<Chars<'a>>>,
+    chars: Peekable<Chars<'a>>,
     ch: char,
     pos: usize,
 }
@@ -17,7 +16,7 @@ impl<'a> Lexer<'a> {
         if let Some(ch) = chars.next() {
             Ok(Lexer {
                 input,
-                chars: Box::new(chars),
+                chars: chars,
                 ch,
                 pos: 0,
             })
@@ -27,22 +26,16 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_char(&mut self) {
-        let chars = self.chars.deref_mut();
-        {
-            let ch = chars.peek();
-            if ch.is_none() {
-                self.ch = '\0';
-                return;
-            }
+        if self.chars.peek().is_none() {
+            self.ch = '\0';
+            return;
         }
         self.ch = self.chars.next().unwrap();
         self.pos += 1;
     }
 
     fn peek_char(&mut self) -> char {
-        let chars = self.chars.deref_mut();
-        let ch = chars.peek();
-        if let Some(ch) = ch {
+        if let Some(ch) = self.chars.peek() {
             *ch
         } else {
             '\0'
