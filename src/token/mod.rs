@@ -59,8 +59,10 @@ impl Token {
         match self.kind {
             TokenKind::Illegal => String::from(""),
             TokenKind::Eof => String::from(""),
-            TokenKind::Ident => self.literal.clone().unwrap(),
-            TokenKind::Int => self.literal.clone().unwrap(),
+            TokenKind::Ident => self.literal.clone()
+                .map_or("".to_string(), |l| l),
+            TokenKind::Int => self.literal.clone()
+                .map_or("".to_string(), |l| l),
             TokenKind::Assign => String::from("="),
             TokenKind::Plus => String::from("+"),
             TokenKind::Minus => String::from("-"),
