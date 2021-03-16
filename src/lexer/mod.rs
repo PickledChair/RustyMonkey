@@ -80,79 +80,79 @@ impl<'a> Lexer<'a> {
                 if self.peek_char() == '=' {
                     self.read_char();
                     self.read_char();
-                    Token::Eq
+                    Token::new(TokenKind::Eq, None)
                 } else {
                     self.read_char();
-                    Token::Assign
+                    Token::new(TokenKind::Assign, None)
                 }
             },
             '+' => {
                 self.read_char();
-                Token::Plus
+                Token::new(TokenKind::Plus, None)
             },
             '-' => {
                 self.read_char();
-                Token::Minus
+                Token::new(TokenKind::Minus, None)
             },
             '!' => {
                 if self.peek_char() == '=' {
                     self.read_char();
                     self.read_char();
-                    Token::NotEq
+                    Token::new(TokenKind::NotEq, None)
                 } else {
                     self.read_char();
-                    Token::Bang
+                    Token::new(TokenKind::Bang, None)
                 }
             },
             '/' => {
                 self.read_char();
-                Token::Slash
+                Token::new(TokenKind::Slash, None)
             },
             '*' => {
                 self.read_char();
-                Token::Asterisk
+                Token::new(TokenKind::Asterisk, None)
             },
             '<' => {
                 self.read_char();
-                Token::Lt
+                Token::new(TokenKind::Lt, None)
             },
             '>' => {
                 self.read_char();
-                Token::Gt
+                Token::new(TokenKind::Gt, None)
             },
             ';' => {
                 self.read_char();
-                Token::Semicolon
+                Token::new(TokenKind::Semicolon, None)
             },
             '(' => {
                 self.read_char();
-                Token::Lparen
+                Token::new(TokenKind::Lparen, None)
             },
             ')' => {
                 self.read_char();
-                Token::Rparen
+                Token::new(TokenKind::Rparen, None)
             },
             ',' => {
                 self.read_char();
-                Token::Comma
+                Token::new(TokenKind::Comma, None)
             },
             '{' => {
                 self.read_char();
-                Token::Lbrace
+                Token::new(TokenKind::Lbrace, None)
             },
             '}' => {
                 self.read_char();
-                Token::Rbrace
+                Token::new(TokenKind::Rbrace, None)
             },
-            '\0' => Token::Eof,
+            '\0' => Token::new(TokenKind::Eof, None),
             _ => {
                 if Lexer::is_letter(self.ch) {
                     let literal = self.read_identifier();
                     lookup_ident(literal)
                 } else if Lexer::is_digit(self.ch) {
-                    Token::Int(self.read_number().parse::<i64>().unwrap())
+                    Token::new(TokenKind::Int, Some(self.read_number().to_string()))
                 } else {
-                    Token::Illegal
+                    Token::new(TokenKind::Illegal, None)
                 }
             },
         }
@@ -164,7 +164,7 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let tok = self.next_token();
-        if tok == Token::Illegal {
+        if tok.kind() == TokenKind::Illegal {
             None
         } else {
             Some(tok)
@@ -174,7 +174,7 @@ impl<'a> Iterator for Lexer<'a> {
 
 #[cfg(test)]
 mod lexer_test {
-    use super::Token::*;
+    use super::TokenKind::*;
     use super::Lexer;
 
     #[test]
@@ -202,58 +202,58 @@ if (5 < 10) {
 
         let test_pairs = [
             (Let, "let"),
-            (Ident("five".to_string()), "five"),
+            (Ident, "five"),
             (Assign, "="),
-            (Int(5), "5"),
+            (Int, "5"),
             (Semicolon, ";"),
             (Let, "let"),
-            (Ident("ten".to_string()), "ten"),
+            (Ident, "ten"),
             (Assign, "="),
-            (Int(10), "10"),
+            (Int, "10"),
             (Semicolon, ";"),
             (Let, "let"),
-            (Ident("add".to_string()), "add"),
+            (Ident, "add"),
             (Assign, "="),
             (Function, "fn"),
             (Lparen, "("),
-            (Ident("x".to_string()), "x"),
+            (Ident, "x"),
             (Comma, ","),
-            (Ident("y".to_string()), "y"),
+            (Ident, "y"),
             (Rparen, ")"),
             (Lbrace, "{"),
-            (Ident("x".to_string()), "x"),
+            (Ident, "x"),
             (Plus, "+"),
-            (Ident("y".to_string()), "y"),
+            (Ident, "y"),
             (Semicolon, ";"),
             (Rbrace, "}"),
             (Semicolon, ";"),
             (Let, "let"),
-            (Ident("result".to_string()), "result"),
+            (Ident, "result"),
             (Assign, "="),
-            (Ident("add".to_string()), "add"),
+            (Ident, "add"),
             (Lparen, "("),
-            (Ident("five".to_string()), "five"),
+            (Ident, "five"),
             (Comma, ","),
-            (Ident("ten".to_string()), "ten"),
+            (Ident, "ten"),
             (Rparen, ")"),
             (Semicolon, ";"),
             (Bang, "!"),
             (Minus, "-"),
             (Slash, "/"),
             (Asterisk, "*"),
-            (Int(5), "5"),
+            (Int, "5"),
             (Semicolon, ";"),
-            (Int(5), "5"),
+            (Int, "5"),
             (Lt, "<"),
-            (Int(10), "10"),
+            (Int, "10"),
             (Gt, ">"),
-            (Int(5), "5"),
+            (Int, "5"),
             (Semicolon, ";"),
             (If, "if"),
             (Lparen, "("),
-            (Int(5), "5"),
+            (Int, "5"),
             (Lt, "<"),
-            (Int(10), "10"),
+            (Int, "10"),
             (Rparen, ")"),
             (Lbrace, "{"),
             (Return, "return"),
@@ -266,13 +266,13 @@ if (5 < 10) {
             (False, "false"),
             (Semicolon, ";"),
             (Rbrace, "}"),
-            (Int(10), "10"),
+            (Int, "10"),
             (Eq, "=="),
-            (Int(10), "10"),
+            (Int, "10"),
             (Semicolon, ";"),
-            (Int(10), "10"),
+            (Int, "10"),
             (NotEq, "!="),
-            (Int(9), "9"),
+            (Int, "9"),
             (Semicolon, ";"),
             (Eof, ""),
         ];
@@ -281,7 +281,7 @@ if (5 < 10) {
 
         for (token, literal) in test_pairs.iter() {
             let tok = l.next().unwrap();
-            assert_eq!(tok, *token);
+            assert_eq!(tok.kind(), *token);
             assert_eq!(tok.get_literal(), (*literal).to_string());
         }
     }

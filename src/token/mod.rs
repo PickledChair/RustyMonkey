@@ -1,99 +1,4 @@
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub enum Token {
-    Illegal,
-    Eof,
-
-    // 識別子 + リテラル
-    Ident(String),  // add, foobar, x, y, ...
-    Int(i64),       // 134356
-
-    // 演算子
-    Assign,         // =
-    Plus,           // +
-    Minus,          // -
-    Bang,           // !
-    Asterisk,       // *
-    Slash,          // /
-
-    Lt,             // <
-    Gt,             // >
-
-    Eq,             // ==
-    NotEq,          // !=
-
-    // デリミタ
-    Comma,
-    Semicolon,
-
-    Lparen,
-    Rparen,
-    Lbrace,
-    Rbrace,
-
-    // キーワード
-    Function,
-    Let,
-    True,
-    False,
-    If,
-    Else,
-    Return,
-}
-
-impl Token {
-    pub fn get_literal(&self) -> String {
-        match self {
-            Token::Illegal => String::from(""),
-            Token::Eof => String::from(""),
-            Token::Ident(ref s) => s.clone(),
-            Token::Int(num) => num.to_string(),
-            Token::Assign => String::from("="),
-            Token::Plus => String::from("+"),
-            Token::Minus => String::from("-"),
-            Token::Bang => String::from("!"),
-            Token::Asterisk => String::from("*"),
-            Token::Slash => String::from("/"),
-            Token::Lt => String::from("<"),
-            Token::Gt => String::from(">"),
-            Token::Eq => String::from("=="),
-            Token::NotEq => String::from("!="),
-            Token::Comma => String::from(","),
-            Token::Semicolon => String::from(";"),
-            Token::Lparen => String::from("("),
-            Token::Rparen => String::from(")"),
-            Token::Lbrace => String::from("{"),
-            Token::Rbrace => String::from("}"),
-            Token::Function => String::from("fn"),
-            Token::Let => String::from("let"),
-            Token::True => String::from("true"),
-            Token::False => String::from("false"),
-            Token::If => String::from("if"),
-            Token::Else => String::from("else"),
-            Token::Return => String::from("return"),
-        }
-    }
-}
-
-const KEYWORDS: &'static [(&'static str, Token)] = &[
-    ("fn", Token::Function),
-    ("let", Token::Let),
-    ("true", Token::True),
-    ("false", Token::False),
-    ("if", Token::If),
-    ("else", Token::Else),
-    ("return", Token::Return),
-];
-
-pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {
-    for (key, token) in KEYWORDS.iter() {
-        if *key == ident.as_ref() {
-            return (*token).clone();
-        }
-    }
-    Token::Ident(ident.as_ref().to_string())
-}
-
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum TokenKind {
     Illegal,
     Eof,
@@ -133,4 +38,71 @@ pub enum TokenKind {
     If,
     Else,
     Return,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Token {
+    kind: TokenKind,
+    literal: Option<String>,
+}
+
+impl Token {
+    pub fn new(kind: TokenKind, literal: Option<String>) -> Token {
+        Token { kind, literal }
+    }
+
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
+    pub fn get_literal(&self) -> String {
+        match self.kind {
+            TokenKind::Illegal => String::from(""),
+            TokenKind::Eof => String::from(""),
+            TokenKind::Ident => self.literal.clone().unwrap(),
+            TokenKind::Int => self.literal.clone().unwrap(),
+            TokenKind::Assign => String::from("="),
+            TokenKind::Plus => String::from("+"),
+            TokenKind::Minus => String::from("-"),
+            TokenKind::Bang => String::from("!"),
+            TokenKind::Asterisk => String::from("*"),
+            TokenKind::Slash => String::from("/"),
+            TokenKind::Lt => String::from("<"),
+            TokenKind::Gt => String::from(">"),
+            TokenKind::Eq => String::from("=="),
+            TokenKind::NotEq => String::from("!="),
+            TokenKind::Comma => String::from(","),
+            TokenKind::Semicolon => String::from(";"),
+            TokenKind::Lparen => String::from("("),
+            TokenKind::Rparen => String::from(")"),
+            TokenKind::Lbrace => String::from("{"),
+            TokenKind::Rbrace => String::from("}"),
+            TokenKind::Function => String::from("fn"),
+            TokenKind::Let => String::from("let"),
+            TokenKind::True => String::from("true"),
+            TokenKind::False => String::from("false"),
+            TokenKind::If => String::from("if"),
+            TokenKind::Else => String::from("else"),
+            TokenKind::Return => String::from("return"),
+        }
+    }
+}
+
+const KEYWORDS: &'static [(&'static str, TokenKind)] = &[
+    ("fn", TokenKind::Function),
+    ("let", TokenKind::Let),
+    ("true", TokenKind::True),
+    ("false", TokenKind::False),
+    ("if", TokenKind::If),
+    ("else", TokenKind::Else),
+    ("return", TokenKind::Return),
+];
+
+pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {
+    for (key, token) in KEYWORDS.iter() {
+        if *key == ident.as_ref() {
+            return Token::new(*token, None);
+        }
+    }
+    Token::new(TokenKind::Ident, Some(ident.as_ref().to_string()))
 }

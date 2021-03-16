@@ -18,7 +18,7 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
         match Lexer::new(&line) {
             Ok(lex) => {
                 for tok in lex {
-                    if tok == Token::Eof {
+                    if tok.kind() == TokenKind::Eof {
                         break;
                     }
                     out.write_all(format!("{:?}", tok).as_str().as_bytes())?;

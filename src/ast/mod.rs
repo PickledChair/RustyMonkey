@@ -77,7 +77,7 @@ impl ReturnStatement {
     pub fn new(token: Token) -> ReturnStatement {
         ReturnStatement {
             token,
-            ret_value: Expression::Identifier(Box::new(Identifier::new(Token::Ident("dummy".to_string()))))
+            ret_value: Expression::Identifier(Box::new(Identifier::new(Token::new(TokenKind::Ident, Some("dummy".to_string())))))
         }
     }
 }

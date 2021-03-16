@@ -17,7 +17,7 @@ impl<'a> Parser<'a> {
     pub fn new(lex: Lexer<'a>) -> Parser<'a> {
         let mut p = Parser {
             lex: lex.peekable(),
-            cur_token: Token::Illegal,
+            cur_token: Token::new(TokenKind::Illegal, None),
             errors: Vec::new(),
         };
         p.next_token();
@@ -32,37 +32,8 @@ impl<'a> Parser<'a> {
 
     fn expect_peek(&mut self, kind: TokenKind) -> Result<(), String> {
         if let Some(tok) = self.lex.peek() {
-            let result = match kind {
-                TokenKind::Ident => matches!(tok, Token::Ident(_)),
-                TokenKind::Int => matches!(tok, Token::Int(_)),
-                TokenKind::Assign => matches!(tok, Token::Assign),
-                TokenKind::Plus => matches!(tok, Token::Plus),
-                TokenKind::Minus => matches!(tok, Token::Minus),
-                TokenKind::Bang => matches!(tok, Token::Bang),
-                TokenKind::Asterisk => matches!(tok, Token::Asterisk),
-                TokenKind::Slash => matches!(tok, Token::Slash),
-                TokenKind::Lt => matches!(tok, Token::Lt),
-                TokenKind::Gt => matches!(tok, Token::Gt),
-                TokenKind::Eq => matches!(tok, Token::Eq),
-                TokenKind::NotEq => matches!(tok, Token::NotEq),
-                TokenKind::Comma => matches!(tok, Token::Comma),
-                TokenKind::Semicolon => matches!(tok, Token::Semicolon),
-                TokenKind::Lparen => matches!(tok, Token::Lparen),
-                TokenKind::Rparen => matches!(tok, Token::Rparen),
-                TokenKind::Lbrace => matches!(tok, Token::Lbrace),
-                TokenKind::Rbrace => matches!(tok, Token::Rbrace),
-                TokenKind::Function => matches!(tok, Token::Function),
-                TokenKind::Let => matches!(tok, Token::Let),
-                TokenKind::True => matches!(tok, Token::True),
-                TokenKind::False => matches!(tok, Token::False),
-                TokenKind::If => matches!(tok, Token::If),
-                TokenKind::Else => matches!(tok, Token::Else),
-                TokenKind::Return => matches!(tok, Token::Return),
-                TokenKind::Illegal => matches!(tok, Token::Illegal),
-                TokenKind::Eof => matches!(tok, Token::Eof),
-            };
-            if !result {
-                return Err(peek_error_msg(format!("{:?}", kind), format!("{:?}", tok)));
+            if tok.kind() != kind {
+                return Err(peek_error_msg(format!("{:?}", kind), format!("{:?}", tok.get_literal())));
             }
         }
         self.next_token();
@@ -72,7 +43,7 @@ impl<'a> Parser<'a> {
     fn parse_program(&mut self) -> Program {
         let mut program = Program::new();
 
-        while self.cur_token != Token::Eof {
+        while self.cur_token.kind() != TokenKind::Eof {
             let stmt = self.parse_statement();
             match stmt {
                 Ok(stmt) => program.statements.push(stmt),
@@ -85,9 +56,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, String> {
-        match self.cur_token {
-            Token::Let => Ok(Statement::Let(Box::new(self.parse_let_statement()?))),
-            Token::Return => Ok(Statement::Return(Box::new(self.parse_return_statment()?))),
+        match self.cur_token.kind() {
+            TokenKind::Let => Ok(Statement::Let(Box::new(self.parse_let_statement()?))),
+            TokenKind::Return => Ok(Statement::Return(Box::new(self.parse_return_statment()?))),
             _ => Err("unimplemented yet".to_string())
         }
     }
@@ -103,7 +74,7 @@ impl<'a> Parser<'a> {
 
         let stmt = LetStatement::new(let_tok, ident);
 
-        while !matches!(self.cur_token, Token::Semicolon) {
+        while self.cur_token.kind() != TokenKind::Semicolon {
             self.next_token();
         }
 
@@ -117,7 +88,7 @@ impl<'a> Parser<'a> {
 
         let stmt = ReturnStatement::new(ret_tok);
 
-        while !matches!(self.cur_token, Token::Semicolon) {
+        while self.cur_token.kind() != TokenKind::Semicolon {
             self.next_token();
         }
 
