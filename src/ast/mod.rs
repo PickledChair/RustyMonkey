@@ -134,10 +134,10 @@ pub struct ExpressionStatement {
 }
 
 impl ExpressionStatement {
-    pub fn new(token: Token) -> ExpressionStatement {
+    pub fn new(token: Token, expression: Expression) -> ExpressionStatement {
         ExpressionStatement {
             token,
-            expression: Expression::Identifier(Box::new(Identifier::new(Token::new(TokenKind::Ident, Some("dummy".to_string())))))
+            expression
         }
     }
 }
@@ -154,7 +154,7 @@ impl NodeExt for ExpressionStatement {
 
 impl StatementExt for ExpressionStatement {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Identifier(Box<Identifier>)
 }
@@ -175,12 +175,14 @@ impl NodeExt for Expression {
 
 #[derive(Debug, Clone)]
 pub struct Identifier {
-    pub token: Token
+    pub token: Token,
+    pub value: String,
 }
 
 impl Identifier {
     pub fn new(token: Token) -> Identifier {
-        Identifier { token }
+        let value = token.get_literal();
+        Identifier { token, value }
     }
 }
 
