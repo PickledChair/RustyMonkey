@@ -1,7 +1,6 @@
 use super::{ast::*, lexer::*, token::*};
 
 use std::iter::Peekable;
-use std::collections::HashMap;
 
 fn peek_error_msg<T1: AsRef<str>, T2: AsRef<str>>(expect: T1, instead: T2) -> String {
     String::from("expected next token to be ")
@@ -21,42 +20,10 @@ enum Precedence {
 
 use Precedence::*;
 
-pub struct PrefixParseFn {
-    lhs: Expression,
-    func: Box<dyn Fn(Expression) -> Expression>
-}
-
-impl PrefixParseFn {
-    pub fn new(lhs: Expression, func: Box<dyn Fn(Expression) -> Expression>) -> PrefixParseFn {
-        PrefixParseFn { lhs, func }
-    }
-
-    pub fn exec(&self) -> Expression {
-        (self.func)(self.lhs.clone())
-    }
-}
-
-pub struct InfixParseFn {
-    lhs: Expression,
-    func: Box<dyn Fn(Expression, Expression) -> Expression>
-}
-
-impl InfixParseFn {
-    pub fn new(lhs: Expression, func: Box<dyn Fn(Expression, Expression) -> Expression>) -> InfixParseFn {
-        InfixParseFn { lhs, func }
-    }
-
-    pub fn exec(&self, rhs: Expression) -> Expression {
-        (self.func)(self.lhs.clone(), rhs)
-    }
-}
-
 pub struct Parser<'a> {
     lex: Peekable<Lexer<'a>>,
     cur_token: Token,
     pub errors: Vec<String>,
-    prefix_parse_fns: HashMap<TokenKind, PrefixParseFn>,
-    infix_parse_fns: HashMap<TokenKind, InfixParseFn>,
 }
 
 impl<'a> Parser<'a> {
@@ -65,11 +32,8 @@ impl<'a> Parser<'a> {
             lex: lex.peekable(),
             cur_token: Token::new(TokenKind::Illegal, None),
             errors: Vec::new(),
-            prefix_parse_fns: HashMap::new(),
-            infix_parse_fns: HashMap::new(),
         };
         p.next_token();
-        p.register_prefix(TokenKind::Ident, p.parse_identifier());
         p
     }
 
@@ -160,29 +124,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, String> {
-        let prefix = self.prefix_parse_fns.get(&self.cur_token.kind());
-        if let Some(prefix) = prefix {
-            let left_expr = prefix.exec();
-            Ok(left_expr)
-        } else {
-            Err("Couldn't parse expression".to_string())
+        match self.cur_token.kind() {
+            TokenKind::Ident => Ok(self.parse_identifier()),
+            _ => Err("Unimplemented yet.".to_string())
         }
     }
 
-    fn parse_identifier(&self) -> PrefixParseFn {
-        let tok = self.cur_token.clone();
-        PrefixParseFn::new(
-            Expression::Identifier(Box::new(Identifier::new(tok))),
-            Box::new(|expr| expr)
-        )
-    }
-
-    fn register_prefix(&mut self, token_kind: TokenKind, f: PrefixParseFn) {
-        self.prefix_parse_fns.insert(token_kind, f);
-    }
-
-    fn register_infix(&mut self, token_kind: TokenKind, f: InfixParseFn) {
-        self.infix_parse_fns.insert(token_kind, f);
+    fn parse_identifier(&self) -> Expression {
+        Expression::Identifier(Box::new(Identifier::new(self.cur_token.clone())))
     }
 }
 
