@@ -126,12 +126,19 @@ impl<'a> Parser<'a> {
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, String> {
         match self.cur_token.kind() {
             TokenKind::Ident => Ok(self.parse_identifier()),
+            TokenKind::Int => Ok(self.parse_integer_literal()?),
             _ => Err("Unimplemented yet.".to_string())
         }
     }
 
     fn parse_identifier(&self) -> Expression {
         Expression::Identifier(Box::new(Identifier::new(self.cur_token.clone())))
+    }
+
+    fn parse_integer_literal(&mut self) -> Result<Expression, String> {
+        Ok(Expression::IntLiteral(
+            Box::new(IntegerLiteral::new(self.cur_token.clone())?)
+        ))
     }
 }
 
@@ -277,6 +284,58 @@ return 993322;
                         panic!(
                             "exp not Expression::Identifier(_). got={:?}",
                             identifier
+                        );
+                    }
+                }
+            },
+            _ => {
+                panic!(
+                    "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                    stmt
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_integer_literal_expression() {
+        let input = "5;";
+
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+        let mut program = p.parse_program();
+        check_parser_errors(&p);
+
+        assert_eq!(
+            program.statements.len(), 1,
+            "program has not enough statements. got={}",
+            program.statements.len()
+        );
+
+        let stmt = program.statements.pop().unwrap();
+
+        match stmt {
+            Statement::ExprStmt(expr_stmt) => {
+                let int_literal = expr_stmt.expression;
+                match int_literal {
+                    Expression::IntLiteral(int_lit) => {
+                        assert_eq!(
+                            int_lit.value, 5,
+                            "ident.token_literal not {}, got={:?}",
+                            "5", int_lit.token_literal()
+                        );
+
+                        assert_eq!(
+                            int_lit.token_literal(),
+                            "5",
+                            "ident.token_literal not {}, got={:?}",
+                            "5", int_lit.token_literal()
+                        );
+                    },
+                    _ => {
+                        panic!(
+                            "exp not Expression::IntLiteral(_). got={:?}",
+                            int_literal
                         );
                     }
                 }

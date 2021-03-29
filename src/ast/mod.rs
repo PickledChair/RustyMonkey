@@ -156,19 +156,22 @@ impl StatementExt for ExpressionStatement {}
 
 #[derive(Debug, Clone)]
 pub enum Expression {
-    Identifier(Box<Identifier>)
+    Identifier(Box<Identifier>),
+    IntLiteral(Box<IntegerLiteral>),
 }
 
 impl NodeExt for Expression {
     fn token_literal(&self) -> String {
         match self {
-            Expression::Identifier(ident) => ident.token_literal()
+            Expression::Identifier(ident) => ident.token_literal(),
+            Expression::IntLiteral(int_lit) => int_lit.token_literal(),
         }
     }
 
     fn to_string(&self) -> String {
         match self {
-            Expression::Identifier(ident) => ident.to_string()
+            Expression::Identifier(ident) => ident.to_string(),
+            Expression::IntLiteral(int_lit) => int_lit.to_string(),
         }
     }
 }
@@ -197,6 +200,37 @@ impl NodeExt for Identifier {
 }
 
 impl ExpressionExt for Identifier {}
+
+#[derive(Debug, Clone)]
+pub struct IntegerLiteral {
+    pub token: Token,
+    pub value: i64,
+}
+
+impl IntegerLiteral {
+    pub fn new(token: Token) -> Result<IntegerLiteral, String> {
+        let value = token.get_literal().parse::<i64>();
+        if let Ok(value) = value {
+            Ok(IntegerLiteral {
+                token, value
+            })
+        } else {
+            Err(format!("could not parse {} as integer", token.get_literal()))
+        }
+    }
+}
+
+impl NodeExt for IntegerLiteral {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        self.token.get_literal()
+    }
+}
+
+impl ExpressionExt for IntegerLiteral {}
 
 #[cfg(test)]
 mod ast_test {
