@@ -158,6 +158,7 @@ impl StatementExt for ExpressionStatement {}
 pub enum Expression {
     Identifier(Box<Identifier>),
     IntLiteral(Box<IntegerLiteral>),
+    PrefixExpr(Box<PrefixExpression>),
 }
 
 impl NodeExt for Expression {
@@ -165,6 +166,7 @@ impl NodeExt for Expression {
         match self {
             Expression::Identifier(ident) => ident.token_literal(),
             Expression::IntLiteral(int_lit) => int_lit.token_literal(),
+            Expression::PrefixExpr(prefix_expr) => prefix_expr.token_literal(),
         }
     }
 
@@ -172,6 +174,7 @@ impl NodeExt for Expression {
         match self {
             Expression::Identifier(ident) => ident.to_string(),
             Expression::IntLiteral(int_lit) => int_lit.to_string(),
+            Expression::PrefixExpr(prefix_expr) => prefix_expr.to_string(),
         }
     }
 }
@@ -232,9 +235,39 @@ impl NodeExt for IntegerLiteral {
 
 impl ExpressionExt for IntegerLiteral {}
 
+#[derive(Debug, Clone)]
+pub struct PrefixExpression {
+    pub token: Token,
+    pub operator: String,
+    pub right: Expression,
+}
+
+impl PrefixExpression {
+    pub fn new(token: Token, right: Expression) -> PrefixExpression {
+        let operator = token.get_literal();
+        PrefixExpression {
+            token, operator, right
+        }
+    }
+}
+
+impl NodeExt for PrefixExpression {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        String::from("(")
+            + &(self.operator)
+            + &(self.right.to_string())
+            + ")"
+    }
+}
+
+impl ExpressionExt for PrefixExpression {}
+
 #[cfg(test)]
 mod ast_test {
-    use crate::token::*;
     use super::*;
 
     #[test]

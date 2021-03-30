@@ -127,6 +127,7 @@ impl<'a> Parser<'a> {
         match self.cur_token.kind() {
             TokenKind::Ident => Ok(self.parse_identifier()),
             TokenKind::Int => Ok(self.parse_integer_literal()?),
+            TokenKind::Bang | TokenKind::Minus => Ok(self.parse_prefix_expression()?),
             _ => Err("Unimplemented yet.".to_string())
         }
     }
@@ -139,6 +140,18 @@ impl<'a> Parser<'a> {
         Ok(Expression::IntLiteral(
             Box::new(IntegerLiteral::new(self.cur_token.clone())?)
         ))
+    }
+
+    fn parse_prefix_expression(&mut self) -> Result<Expression, String> {
+        let cur_token = self.cur_token.clone();
+
+        self.next_token();
+
+        let right = self.parse_expression(Prefix)?;
+
+        Ok(Expression::PrefixExpr(Box::new(
+            PrefixExpression::new(cur_token, right)
+        )))
     }
 }
 
@@ -317,34 +330,90 @@ return 993322;
         match stmt {
             Statement::ExprStmt(expr_stmt) => {
                 let int_literal = expr_stmt.expression;
-                match int_literal {
-                    Expression::IntLiteral(int_lit) => {
-                        assert_eq!(
-                            int_lit.value, 5,
-                            "ident.token_literal not {}, got={:?}",
-                            "5", int_lit.token_literal()
-                        );
-
-                        assert_eq!(
-                            int_lit.token_literal(),
-                            "5",
-                            "ident.token_literal not {}, got={:?}",
-                            "5", int_lit.token_literal()
-                        );
-                    },
-                    _ => {
-                        panic!(
-                            "exp not Expression::IntLiteral(_). got={:?}",
-                            int_literal
-                        );
-                    }
-                }
+                test_integer_literal(int_literal, 5);
             },
             _ => {
                 panic!(
                     "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
                     stmt
                 );
+            }
+        }
+    }
+
+    fn test_integer_literal(il: Expression, value: i64) {
+        let value_str = value.to_string();
+        match il {
+            Expression::IntLiteral(int_lit) => {
+                assert_eq!(
+                    int_lit.value, value,
+                    "ident.token_literal not {}, got={:?}",
+                    value_str, int_lit.token_literal()
+                );
+
+                assert_eq!(
+                    int_lit.token_literal(),
+                    value_str,
+                    "ident.token_literal not {}, got={:?}",
+                    value_str, int_lit.token_literal()
+                );
+            },
+            _ => {
+                panic!(
+                    "exp not Expression::IntLiteral(_). got={:?}",
+                    il
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_parsing_prefix_expressions() {
+        let prefix_tests: [(&'static str, &'static str, i64); 2] = [
+            ("!5;", "!", 5),
+            ("-15;", "-", 15),
+        ];
+
+        for (input, operator, int_value) in prefix_tests.iter() {
+            let l = Lexer::new(input).unwrap();
+            let mut p = Parser::new(l);
+            let mut program = p.parse_program();
+            check_parser_errors(&p);
+
+            assert_eq!(
+                program.statements.len(), 1,
+                "program.statements does not contain {} statements. got={}",
+                1, program.statements.len()
+            );
+
+            let stmt = program.statements.pop().unwrap();
+
+            match stmt {
+                Statement::ExprStmt(expr_stmt) => {
+                    let prefix_expr = expr_stmt.expression;
+                    match prefix_expr {
+                        Expression::PrefixExpr(prefix_expr) => {
+                            assert_eq!(
+                                prefix_expr.operator, operator.to_string(),
+                                "expr.operator is not {}. got={:?}",
+                                operator, prefix_expr.operator
+                            );
+                            test_integer_literal(prefix_expr.right, *int_value);
+                        },
+                        _ => {
+                            panic!(
+                                "exp not Expression::PrefixExpr(_). got={:?}",
+                                prefix_expr
+                            );
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                        stmt
+                    );
+                }
             }
         }
     }
