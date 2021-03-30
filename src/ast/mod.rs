@@ -159,6 +159,7 @@ pub enum Expression {
     Identifier(Box<Identifier>),
     IntLiteral(Box<IntegerLiteral>),
     PrefixExpr(Box<PrefixExpression>),
+    InfixExpr(Box<InfixExpression>),
 }
 
 impl NodeExt for Expression {
@@ -167,6 +168,7 @@ impl NodeExt for Expression {
             Expression::Identifier(ident) => ident.token_literal(),
             Expression::IntLiteral(int_lit) => int_lit.token_literal(),
             Expression::PrefixExpr(prefix_expr) => prefix_expr.token_literal(),
+            Expression::InfixExpr(infix_expr) => infix_expr.token_literal(),
         }
     }
 
@@ -175,6 +177,7 @@ impl NodeExt for Expression {
             Expression::Identifier(ident) => ident.to_string(),
             Expression::IntLiteral(int_lit) => int_lit.to_string(),
             Expression::PrefixExpr(prefix_expr) => prefix_expr.to_string(),
+            Expression::InfixExpr(infix_expr) => infix_expr.to_string(),
         }
     }
 }
@@ -265,6 +268,37 @@ impl NodeExt for PrefixExpression {
 }
 
 impl ExpressionExt for PrefixExpression {}
+
+#[derive(Debug, Clone)]
+pub struct InfixExpression {
+    pub token: Token,
+    pub left: Expression,
+    pub operator: String,
+    pub right: Expression,
+}
+
+impl InfixExpression {
+    pub fn new(token: Token, left: Expression, right: Expression) -> InfixExpression {
+        let operator = token.get_literal();
+        InfixExpression { token, left, operator, right }
+    }
+}
+
+impl NodeExt for InfixExpression {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        String::from("(")
+            + &self.left.to_string()
+            + " " + &self.operator + " "
+            + &self.right.to_string()
+            + ")"
+    }
+}
+
+impl ExpressionExt for InfixExpression {}
 
 #[cfg(test)]
 mod ast_test {

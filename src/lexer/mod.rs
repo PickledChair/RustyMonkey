@@ -28,6 +28,7 @@ impl<'a> Lexer<'a> {
     fn read_char(&mut self) {
         if self.chars.peek().is_none() {
             self.ch = '\0';
+            self.pos += 1;
             return;
         }
         self.ch = self.chars.next().unwrap();

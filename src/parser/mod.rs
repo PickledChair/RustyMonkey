@@ -7,7 +7,7 @@ fn peek_error_msg<T1: AsRef<str>, T2: AsRef<str>>(expect: T1, instead: T2) -> St
         + expect.as_ref() + ", got " + instead.as_ref() + " instead"
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 enum Precedence {
     Lowest,
     Equals,        // ==
@@ -19,6 +19,20 @@ enum Precedence {
 }
 
 use Precedence::*;
+
+fn get_precedence(kind: TokenKind) -> Precedence {
+    match kind {
+        TokenKind::Eq => Equals,
+        TokenKind::NotEq => Equals,
+        TokenKind::Lt => LessGreater,
+        TokenKind::Gt => LessGreater,
+        TokenKind::Plus => Sum,
+        TokenKind::Minus => Sum,
+        TokenKind::Slash => Product,
+        TokenKind::Asterisk => Product,
+        _ => Lowest,
+    }
+}
 
 pub struct Parser<'a> {
     lex: Peekable<Lexer<'a>>,
@@ -51,6 +65,10 @@ impl<'a> Parser<'a> {
         }
         self.next_token();
         Ok(())
+    }
+
+    fn cur_precedence(&self) -> Precedence {
+        get_precedence(self.cur_token.kind())
     }
 
     fn parse_program(&mut self) -> Program {
@@ -124,12 +142,35 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, String> {
-        match self.cur_token.kind() {
-            TokenKind::Ident => Ok(self.parse_identifier()),
-            TokenKind::Int => Ok(self.parse_integer_literal()?),
-            TokenKind::Bang | TokenKind::Minus => Ok(self.parse_prefix_expression()?),
-            _ => Err("Unimplemented yet.".to_string())
+        use TokenKind::*;
+
+        let mut left_exp = match self.cur_token.kind() {
+            Ident => self.parse_identifier(),
+            Int => self.parse_integer_literal()?,
+            Bang | Minus => self.parse_prefix_expression()?,
+            _ => return Err("could not parse expression.".to_string())
+        };
+
+        loop {
+            if let Some(tok) = self.lex.peek() {
+                let peek_kind = tok.kind();
+                if peek_kind != Semicolon && prec < get_precedence(peek_kind) {
+                    match peek_kind {
+                        Plus | Minus | Slash | Asterisk | Eq | NotEq | Lt | Gt => {
+                            self.next_token();
+
+                            left_exp = self.parse_infix_expression(left_exp)?;
+                            continue;
+                        },
+                        _ => ()
+                    }
+                }
+                break;
+            }
+            break;
         }
+
+        Ok(left_exp)
     }
 
     fn parse_identifier(&self) -> Expression {
@@ -151,6 +192,19 @@ impl<'a> Parser<'a> {
 
         Ok(Expression::PrefixExpr(Box::new(
             PrefixExpression::new(cur_token, right)
+        )))
+    }
+
+    fn parse_infix_expression(&mut self, left: Expression) -> Result<Expression, String> {
+        let cur_token = self.cur_token.clone();
+        let precedence = self.cur_precedence();
+
+        self.next_token();
+
+        let right = self.parse_expression(precedence)?;
+
+        Ok(Expression::InfixExpr(Box::new(
+            InfixExpression::new(cur_token, left, right)
         )))
     }
 }
@@ -277,8 +331,8 @@ return 993322;
 
         match stmt {
             Statement::ExprStmt(expr_stmt) => {
-                let identifier = expr_stmt.expression;
-                match identifier {
+                let expr = expr_stmt.expression;
+                match expr {
                     Expression::Identifier(ident) => {
                         assert_eq!(
                             ident.value, "foobar",
@@ -296,7 +350,7 @@ return 993322;
                     _ => {
                         panic!(
                             "exp not Expression::Identifier(_). got={:?}",
-                            identifier
+                            expr
                         );
                     }
                 }
@@ -390,8 +444,8 @@ return 993322;
 
             match stmt {
                 Statement::ExprStmt(expr_stmt) => {
-                    let prefix_expr = expr_stmt.expression;
-                    match prefix_expr {
+                    let expr = expr_stmt.expression;
+                    match expr {
                         Expression::PrefixExpr(prefix_expr) => {
                             assert_eq!(
                                 prefix_expr.operator, operator.to_string(),
@@ -403,7 +457,7 @@ return 993322;
                         _ => {
                             panic!(
                                 "exp not Expression::PrefixExpr(_). got={:?}",
-                                prefix_expr
+                                expr
                             );
                         }
                     }
@@ -415,6 +469,94 @@ return 993322;
                     );
                 }
             }
+        }
+    }
+
+    #[test]
+    fn test_parsing_infix_expression() {
+        let infix_tests: [(&'static str, i64, &'static str, i64); 8] = [
+            ("5 + 5;", 5, "+", 5),
+            ("5 - 5;", 5, "-", 5),
+            ("5 * 5;", 5, "*", 5),
+            ("5 / 5;", 5, "/", 5),
+            ("5 > 5;", 5, ">", 5),
+            ("5 < 5;", 5, "<", 5),
+            ("5 == 5;", 5, "==", 5),
+            ("5 != 5;", 5, "!=", 5),
+        ];
+
+        for (input, left_value, operator, right_value) in infix_tests.iter() {
+            let l = Lexer::new(input).unwrap();
+            let mut p = Parser::new(l);
+            let mut program = p.parse_program();
+            check_parser_errors(&p);
+
+            assert_eq!(
+                program.statements.len(), 1,
+                "program.statements does not contain {} statements. got={}",
+                1, program.statements.len()
+            );
+
+            let stmt = program.statements.pop().unwrap();
+
+            match stmt {
+                Statement::ExprStmt(expr_stmt) => {
+                    let expr = expr_stmt.expression;
+                    match expr {
+                        Expression::InfixExpr(infix_expr) => {
+                            test_integer_literal(infix_expr.left, *left_value);
+                            assert_eq!(
+                                infix_expr.operator, operator.to_string(),
+                                "expr.operator is not {}. got={:?}",
+                                operator, infix_expr.operator
+                            );
+                            test_integer_literal(infix_expr.right, *right_value);
+                        },
+                        _ => {
+                            panic!(
+                                "exp not Expression::InfixExpr(_). got={:?}",
+                                expr
+                            );
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                        stmt
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_operator_precedence_parsing() {
+        let tests = [
+            ("-a * b", "((-a) * b)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b - c", "((a + b) - c)"),
+            ("a * b * c", "((a * b) * c)"),
+            ("a * b / c", "((a * b) / c)"),
+            ("a + b / c", "(a + (b / c))"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+        ];
+
+        for (input, expected) in tests.iter() {
+            let l = Lexer::new(input).unwrap();
+            let mut p = Parser::new(l);
+            let program = p.parse_program();
+            check_parser_errors(&p);
+
+            let actual = program.to_string();
+            assert_eq!(
+                actual, *expected, "expected={}, got={}", *expected, actual
+            );
         }
     }
 }
