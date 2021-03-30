@@ -332,28 +332,8 @@ return 993322;
         match stmt {
             Statement::ExprStmt(expr_stmt) => {
                 let expr = expr_stmt.expression;
-                match expr {
-                    Expression::Identifier(ident) => {
-                        assert_eq!(
-                            ident.value, "foobar",
-                            "ident.token_literal not {}, got={:?}",
-                            "foobar", ident.token_literal()
-                        );
 
-                        assert_eq!(
-                            ident.token_literal(),
-                            "foobar",
-                            "ident.token_literal not {}, got={:?}",
-                            "foobar", ident.token_literal()
-                        );
-                    },
-                    _ => {
-                        panic!(
-                            "exp not Expression::Identifier(_). got={:?}",
-                            expr
-                        );
-                    }
-                }
+                test_literal_expression(expr, Expected::Str("foobar".to_string()));
             },
             _ => {
                 panic!(
@@ -384,7 +364,8 @@ return 993322;
         match stmt {
             Statement::ExprStmt(expr_stmt) => {
                 let int_literal = expr_stmt.expression;
-                test_integer_literal(int_literal, 5);
+
+                test_literal_expression(int_literal, Expected::Int64(5));
             },
             _ => {
                 panic!(
@@ -421,6 +402,62 @@ return 993322;
         }
     }
 
+    fn test_identifier(exp: Expression, value: String) {
+        match exp {
+            Expression::Identifier(ident) => {
+                assert_eq!(
+                    ident.value, value,
+                    "ident.value not {}, got={}", value, ident.value
+                );
+
+                assert_eq!(
+                    ident.token_literal(), value,
+                    "ident.token_literal not {}. got={}",
+                    value, ident.token_literal()
+                );
+            },
+            _ => {
+                panic!(
+                    "exp not Expression::Identifier(_). got={:?}",
+                    exp
+                );
+            }
+        }
+    }
+
+    enum Expected {
+        // Int(i32),
+        Int64(i64),
+        Str(String),
+    }
+
+    fn test_literal_expression(exp: Expression, expected: Expected) {
+        match expected {
+            // Expected::Int(num) => test_integer_literal(exp, num as i64),
+            Expected::Int64(num) => test_integer_literal(exp, num),
+            Expected::Str(string) => test_identifier(exp, string),
+        }
+    }
+
+    fn test_infix_expression(exp: Expression, left: Expected, operator: String, right: Expected) {
+        match exp {
+            Expression::InfixExpr(infix_expr) => {
+                test_literal_expression(infix_expr.left, left);
+
+                assert_eq!(
+                    infix_expr.operator, operator,
+                    "infix_expr.operator is not {}. got={}",
+                    operator, infix_expr.operator
+                );
+
+                test_literal_expression(infix_expr.right, right);
+            },
+            _ => panic!(
+                "exp is not Expression::InfixExpr(_). got={:?}", exp
+            )
+        }
+    }
+
     #[test]
     fn test_parsing_prefix_expressions() {
         let prefix_tests: [(&'static str, &'static str, i64); 2] = [
@@ -452,7 +489,8 @@ return 993322;
                                 "expr.operator is not {}. got={:?}",
                                 operator, prefix_expr.operator
                             );
-                            test_integer_literal(prefix_expr.right, *int_value);
+
+                            test_literal_expression(prefix_expr.right, Expected::Int64(*int_value));
                         },
                         _ => {
                             panic!(
@@ -502,23 +540,13 @@ return 993322;
             match stmt {
                 Statement::ExprStmt(expr_stmt) => {
                     let expr = expr_stmt.expression;
-                    match expr {
-                        Expression::InfixExpr(infix_expr) => {
-                            test_integer_literal(infix_expr.left, *left_value);
-                            assert_eq!(
-                                infix_expr.operator, operator.to_string(),
-                                "expr.operator is not {}. got={:?}",
-                                operator, infix_expr.operator
-                            );
-                            test_integer_literal(infix_expr.right, *right_value);
-                        },
-                        _ => {
-                            panic!(
-                                "exp not Expression::InfixExpr(_). got={:?}",
-                                expr
-                            );
-                        }
-                    }
+
+                    test_infix_expression(
+                        expr,
+                        Expected::Int64(*left_value),
+                        operator.to_string(),
+                        Expected::Int64(*right_value)
+                    );
                 },
                 _ => {
                     panic!(
