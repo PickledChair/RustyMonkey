@@ -149,7 +149,8 @@ impl<'a> Parser<'a> {
             Int => self.parse_integer_literal()?,
             True | False => self.parse_boolean()?,
             Bang | Minus => self.parse_prefix_expression()?,
-            _ => return Err("could not parse expression.".to_string())
+            Lparen => self.parse_grouped_expression()?,
+            _ => return Err(format!("no prefix parse function for {:?} found", self.cur_token.kind()))
         };
 
         loop {
@@ -211,6 +212,16 @@ impl<'a> Parser<'a> {
         Ok(Expression::InfixExpr(Box::new(
             InfixExpression::new(cur_token, left, right)
         )))
+    }
+
+    fn parse_grouped_expression(&mut self) -> Result<Expression, String> {
+        self.next_token();
+
+        let exp = self.parse_expression(Lowest)?;
+
+        self.expect_peek(TokenKind::Rparen)?;
+
+        Ok(exp)
     }
 }
 
