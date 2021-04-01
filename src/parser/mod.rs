@@ -147,6 +147,7 @@ impl<'a> Parser<'a> {
         let mut left_exp = match self.cur_token.kind() {
             Ident => self.parse_identifier(),
             Int => self.parse_integer_literal()?,
+            True | False => self.parse_boolean()?,
             Bang | Minus => self.parse_prefix_expression()?,
             _ => return Err("could not parse expression.".to_string())
         };
@@ -181,6 +182,10 @@ impl<'a> Parser<'a> {
         Ok(Expression::IntLiteral(
             Box::new(IntegerLiteral::new(self.cur_token.clone())?)
         ))
+    }
+
+    fn parse_boolean(&self) -> Result<Expression, String> {
+        Ok(Expression::Boolean(Box::new(Boolean::new(self.cur_token.clone())?)))
     }
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, String> {

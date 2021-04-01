@@ -160,6 +160,7 @@ pub enum Expression {
     IntLiteral(Box<IntegerLiteral>),
     PrefixExpr(Box<PrefixExpression>),
     InfixExpr(Box<InfixExpression>),
+    Boolean(Box<Boolean>),
 }
 
 impl NodeExt for Expression {
@@ -169,6 +170,7 @@ impl NodeExt for Expression {
             Expression::IntLiteral(int_lit) => int_lit.token_literal(),
             Expression::PrefixExpr(prefix_expr) => prefix_expr.token_literal(),
             Expression::InfixExpr(infix_expr) => infix_expr.token_literal(),
+            Expression::Boolean(boolean) => boolean.token_literal(),
         }
     }
 
@@ -178,6 +180,7 @@ impl NodeExt for Expression {
             Expression::IntLiteral(int_lit) => int_lit.to_string(),
             Expression::PrefixExpr(prefix_expr) => prefix_expr.to_string(),
             Expression::InfixExpr(infix_expr) => infix_expr.to_string(),
+            Expression::Boolean(boolean) => boolean.to_string(),
         }
     }
 }
@@ -299,6 +302,35 @@ impl NodeExt for InfixExpression {
 }
 
 impl ExpressionExt for InfixExpression {}
+
+#[derive(Debug, Clone)]
+pub struct Boolean {
+    pub token: Token,
+    pub value: bool,
+}
+
+impl Boolean {
+    pub fn new(token: Token) -> Result<Boolean, String> {
+        let value = &(token.get_literal()).parse::<bool>();
+        if let Ok(value) = value {
+            Ok(Boolean { token, value: *value })
+        } else {
+            Err(format!("could not parse {} as boolean", token.get_literal()))
+        }
+    }
+}
+
+impl NodeExt for Boolean {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        self.token.get_literal()
+    }
+}
+
+impl ExpressionExt for Boolean {}
 
 #[cfg(test)]
 mod ast_test;

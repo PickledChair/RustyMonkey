@@ -120,7 +120,7 @@ fn test_identifier_expression() {
         Statement::ExprStmt(expr_stmt) => {
             let expr = expr_stmt.expression;
 
-            test_literal_expression(expr, Expected::Str("foobar".to_string()));
+            test_literal_expression(expr, &Expected::Str("foobar".to_string()));
         },
         _ => {
             panic!(
@@ -152,13 +152,51 @@ fn test_integer_literal_expression() {
         Statement::ExprStmt(expr_stmt) => {
             let int_literal = expr_stmt.expression;
 
-            test_literal_expression(int_literal, Expected::Int64(5));
+            test_literal_expression(int_literal, &Expected::Int64(5));
         },
         _ => {
             panic!(
                 "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
                 stmt
             );
+        }
+    }
+}
+
+#[test]
+fn test_boolean_literal_expression() {
+    let tests = [
+        ("true;", Expected::Bool(true)),
+        ("false;", Expected::Bool(false)),
+    ];
+
+    for (input, expected) in tests.iter() {
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+
+        let mut program = p.parse_program();
+        check_parser_errors(&p);
+
+        assert_eq!(
+            program.statements.len(), 1,
+            "program has not enough statements. got={}",
+            program.statements.len()
+        );
+
+        let stmt = program.statements.pop().unwrap();
+
+        match stmt {
+            Statement::ExprStmt(expr_stmt) => {
+                let expr = expr_stmt.expression;
+
+                test_literal_expression(expr, expected);
+            },
+            _ => {
+                panic!(
+                    "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                    stmt
+                );
+            }
         }
     }
 }
@@ -189,7 +227,7 @@ fn test_integer_literal(il: Expression, value: i64) {
     }
 }
 
-fn test_identifier(exp: Expression, value: String) {
+fn test_identifier(exp: Expression, value: &str) {
     match exp {
         Expression::Identifier(ident) => {
             assert_eq!(
@@ -212,21 +250,47 @@ fn test_identifier(exp: Expression, value: String) {
     }
 }
 
+fn test_boolean_literal(exp: Expression, value: bool) {
+    match exp {
+        Expression::Boolean(boolean) => {
+            assert_eq!(
+                boolean.value, value,
+                "boolean.value not {}, got={}",
+                value, boolean.value
+            );
+
+            assert_eq!(
+                boolean.token_literal(), value.to_string(),
+                "boolean.token_literal not {}. got={}",
+                value.to_string(), boolean.token_literal()
+            );
+        },
+        _ => {
+            panic!(
+                "exp not Expression::Boolean(_). got={:?}",
+                exp
+            );
+        }
+    }
+}
+
 enum Expected {
     // Int(i32),
     Int64(i64),
     Str(String),
+    Bool(bool),
 }
 
-fn test_literal_expression(exp: Expression, expected: Expected) {
+fn test_literal_expression(exp: Expression, expected: &Expected) {
     match expected {
         // Expected::Int(num) => test_integer_literal(exp, num as i64),
-        Expected::Int64(num) => test_integer_literal(exp, num),
+        Expected::Int64(num) => test_integer_literal(exp, *num),
         Expected::Str(string) => test_identifier(exp, string),
+        Expected::Bool(boolean) => test_boolean_literal(exp, *boolean),
     }
 }
 
-fn test_infix_expression(exp: Expression, left: Expected, operator: String, right: Expected) {
+fn test_infix_expression(exp: Expression, left: &Expected, operator: String, right: &Expected) {
     match exp {
         Expression::InfixExpr(infix_expr) => {
             test_literal_expression(infix_expr.left, left);
@@ -247,9 +311,11 @@ fn test_infix_expression(exp: Expression, left: Expected, operator: String, righ
 
 #[test]
 fn test_parsing_prefix_expressions() {
-    let prefix_tests: [(&'static str, &'static str, i64); 2] = [
-        ("!5;", "!", 5),
-        ("-15;", "-", 15),
+    let prefix_tests = [
+        ("!5;", "!", Expected::Int64(5)),
+        ("-15;", "-", Expected::Int64(15)),
+        ("!true;", "!", Expected::Bool(true)),
+        ("!false;", "!", Expected::Bool(false)),
     ];
 
     for (input, operator, int_value) in prefix_tests.iter() {
@@ -277,7 +343,7 @@ fn test_parsing_prefix_expressions() {
                             operator, prefix_expr.operator
                         );
 
-                        test_literal_expression(prefix_expr.right, Expected::Int64(*int_value));
+                        test_literal_expression(prefix_expr.right, int_value);
                     },
                     _ => {
                         panic!(
@@ -299,15 +365,18 @@ fn test_parsing_prefix_expressions() {
 
 #[test]
 fn test_parsing_infix_expression() {
-    let infix_tests: [(&'static str, i64, &'static str, i64); 8] = [
-        ("5 + 5;", 5, "+", 5),
-        ("5 - 5;", 5, "-", 5),
-        ("5 * 5;", 5, "*", 5),
-        ("5 / 5;", 5, "/", 5),
-        ("5 > 5;", 5, ">", 5),
-        ("5 < 5;", 5, "<", 5),
-        ("5 == 5;", 5, "==", 5),
-        ("5 != 5;", 5, "!=", 5),
+    let infix_tests = [
+        ("5 + 5;", Expected::Int64(5), "+", Expected::Int64(5)),
+        ("5 - 5;", Expected::Int64(5), "-", Expected::Int64(5)),
+        ("5 * 5;", Expected::Int64(5), "*", Expected::Int64(5)),
+        ("5 / 5;", Expected::Int64(5), "/", Expected::Int64(5)),
+        ("5 > 5;", Expected::Int64(5), ">", Expected::Int64(5)),
+        ("5 < 5;", Expected::Int64(5), "<", Expected::Int64(5)),
+        ("5 == 5;", Expected::Int64(5), "==", Expected::Int64(5)),
+        ("5 != 5;", Expected::Int64(5), "!=", Expected::Int64(5)),
+        ("true == true", Expected::Bool(true), "==", Expected::Bool(true)),
+        ("true != false", Expected::Bool(true), "!=", Expected::Bool(false)),
+        ("false == false", Expected::Bool(false), "==", Expected::Bool(false)),
     ];
 
     for (input, left_value, operator, right_value) in infix_tests.iter() {
@@ -330,9 +399,9 @@ fn test_parsing_infix_expression() {
 
                 test_infix_expression(
                     expr,
-                    Expected::Int64(*left_value),
+                    left_value,
                     operator.to_string(),
-                    Expected::Int64(*right_value)
+                    right_value
                 );
             },
             _ => {
@@ -348,18 +417,70 @@ fn test_parsing_infix_expression() {
 #[test]
 fn test_operator_precedence_parsing() {
     let tests = [
-        ("-a * b", "((-a) * b)"),
-        ("!-a", "(!(-a))"),
-        ("a + b + c", "((a + b) + c)"),
-        ("a + b - c", "((a + b) - c)"),
-        ("a * b * c", "((a * b) * c)"),
-        ("a * b / c", "((a * b) / c)"),
-        ("a + b / c", "(a + (b / c))"),
-        ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
-        ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
-        ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
-        ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
-        ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+        (
+            "-a * b",
+            "((-a) * b)"
+        ),
+        (
+            "!-a",
+            "(!(-a))"
+        ),
+        (
+            "a + b + c",
+            "((a + b) + c)"
+        ),
+        (
+            "a + b - c",
+            "((a + b) - c)"
+        ),
+        (
+            "a * b * c",
+            "((a * b) * c)"
+        ),
+        (
+            "a * b / c",
+            "((a * b) / c)"
+        ),
+        (
+            "a + b / c",
+            "(a + (b / c))"
+        ),
+        (
+            "a + b * c + d / e - f",
+            "(((a + (b * c)) + (d / e)) - f)"
+        ),
+        (
+            "3 + 4; -5 * 5",
+            "(3 + 4)((-5) * 5)"
+        ),
+        (
+            "5 > 4 == 3 < 4",
+            "((5 > 4) == (3 < 4))"
+        ),
+        (
+            "5 < 4 != 3 > 4",
+            "((5 < 4) != (3 > 4))"
+        ),
+        (
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+        ),
+        (
+            "true",
+            "true"
+        ),
+        (
+            "false",
+            "false"
+        ),
+        (
+            "3 > 5 == false",
+            "((3 > 5) == false)"
+        ),
+        (
+            "3 < 5 == true",
+            "((3 < 5) == true)"
+        ),
     ];
 
     for (input, expected) in tests.iter() {
