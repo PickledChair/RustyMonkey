@@ -3,31 +3,40 @@ use super::*;
 
 #[test]
 fn test_let_statements() {
-    let input = "
-let x = 5;
-let y = 10;
-let foobar = 838383;
-";
-    let l = Lexer::new(input).unwrap();
-    let mut p = Parser::new(l);
+    let tests = [
+        ("let x = 5;", Expected::Str("x".to_string()), Expected::Int64(5)),
+        ("let y = true;", Expected::Str("y".to_string()), Expected::Bool(true)),
+        ("let foobar = y;", Expected::Str("foobar".to_string()), Expected::Str("y".to_string())),
+    ];
 
-    let program = p.parse_program();
+    for (input, expected_ident, expected_value) in &tests {
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        check_parser_errors(&p);
 
-    check_parser_errors(&p);
+        assert_eq!(
+            program.statements.len(), 1,
+            "program.statements does not contain 1 statements. got={}",
+            program.statements.len()
+        );
 
-    if program.statements.len() != 3 {
-        panic!("program.statements does not contain 3 statements. got={}", program.statements.len());
+        let stmt = &program.statements[0];
+        assert!(test_let_statement(stmt, expected_ident));
+
+        match stmt {
+            Statement::Let(let_stmt) => {
+                test_literal_expression(let_stmt.value.clone(), expected_value);
+            },
+            _ => {
+                panic!("stmt is not Statement::Let(_). got={:?}", stmt);
+            }
+        }
     }
 
-    let test_idents = ["x", "y", "foobar"];
-
-    for (i, tt) in test_idents.iter().enumerate() {
-        let stmt = &program.statements[i];
-        assert!(test_let_statement(stmt, tt));
-    }
 }
 
-fn test_let_statement(s: &Statement, name: &str) -> bool {
+fn test_let_statement(s: &Statement, name: &Expected) -> bool {
     let token_literal_result = s.token_literal() == "let";
     assert!(token_literal_result,
             "s.token_literal not 'let'. got={}",
@@ -42,44 +51,46 @@ fn test_let_statement(s: &Statement, name: &str) -> bool {
         "s not Statement::Let. got={:?}", s
     );
 
-    let let_stmt_name = match s {
-        Statement::Let(let_stmt) => &let_stmt.name,
+    match s {
+        Statement::Let(let_stmt) => test_literal_expression(
+            Expression::Identifier(Box::new(let_stmt.name.clone())),
+            name
+        ),
         other => panic!("s is not Statement::Let. got={:?}", other),
     };
-
-    let let_stmt_name_result = let_stmt_name.token_literal() == name;
-    assert!(let_stmt_name_result,
-            "let_stmt.name's literal not '{}', got={}",
-            name, let_stmt_name.token_literal()
-    );
 
     true
 }
 
 #[test]
 fn test_return_statements() {
-    let input = "
-return 5;
-return 10;
-return 993322;
-";
-    let l = Lexer::new(input).unwrap();
-    let mut p = Parser::new(l);
+    let tests = [
+        ("return 5;", Expected::Int64(5)),
+        ("return false;", Expected::Bool(false)),
+        ("return hogefuga;" , Expected::Str("hogefuga".to_string()))
+    ];
 
-    let program = p.parse_program();
-    check_parser_errors(&p);
+    for (input, expected) in &tests {
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        check_parser_errors(&p);
 
-    assert_eq!(
-        program.statements.len(), 3,
-        "program.statements does not contain 3 statements. got={}",
-        program.statements.len()
-    );
-
-    for stmt in program.statements {
-        assert!(
-            matches!(stmt, Statement::Return(_)),
-            "stmt not Statement::Return. got={:?}", stmt
+        assert_eq!(
+            program.statements.len(), 1,
+            "program.statements does not contain 1 statements. got={}",
+            program.statements.len()
         );
+
+        let stmt = program.statements[0].clone();
+        match stmt {
+            Statement::Return(ret_stmt) => {
+                test_literal_expression(ret_stmt.ret_value.clone(), expected);
+            },
+            _ => {
+                panic!("stmt not Statement::Return(_). got={:?}", stmt);
+            }
+        }
     }
 }
 

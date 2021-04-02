@@ -73,12 +73,8 @@ pub struct LetStatement {
 }
 
 impl LetStatement {
-    pub fn new(token: Token, name: Identifier) -> LetStatement {
-        LetStatement {
-            token,
-            name: name.clone(),
-            value: Expression::Identifier(Box::new(Identifier::new(Token::new(TokenKind::Ident, Some("dummy".to_string())))))
-        }
+    pub fn new(token: Token, name: Identifier, value: Expression) -> LetStatement {
+        LetStatement { token, name, value }
     }
 }
 
@@ -105,11 +101,8 @@ pub struct ReturnStatement {
 }
 
 impl ReturnStatement {
-    pub fn new(token: Token) -> ReturnStatement {
-        ReturnStatement {
-            token,
-            ret_value: Expression::Identifier(Box::new(Identifier::new(Token::new(TokenKind::Ident, Some("dummy".to_string())))))
-        }
+    pub fn new(token: Token, ret_value: Expression) -> ReturnStatement {
+        ReturnStatement { token, ret_value }
     }
 }
 

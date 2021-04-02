@@ -104,10 +104,16 @@ impl<'a> Parser<'a> {
 
         self.expect_peek(TokenKind::Assign)?;
 
-        let stmt = LetStatement::new(let_tok, ident);
+        self.next_token();
 
-        while self.cur_token.kind() != TokenKind::Semicolon {
-            self.next_token();
+        let value = self.parse_expression(Lowest)?;
+
+        let stmt = LetStatement::new(let_tok, ident, value);
+
+        if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Semicolon {
+                self.next_token();
+            }
         }
 
         Ok(stmt)
@@ -118,10 +124,14 @@ impl<'a> Parser<'a> {
 
         self.next_token();
 
-        let stmt = ReturnStatement::new(ret_tok);
+        let ret_value = self.parse_expression(Lowest)?;
 
-        while self.cur_token.kind() != TokenKind::Semicolon {
-            self.next_token();
+        let stmt = ReturnStatement::new(ret_tok, ret_value);
+
+        if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Semicolon {
+                self.next_token();
+            }
         }
 
         Ok(stmt)

@@ -15,14 +15,22 @@ fn test_string() {
                         TokenKind::Ident,
                         Some("myVar".to_string())
                     )
-                )
+                ),
+                Expression::Identifier(Box::new(
+                    Identifier::new(
+                        Token::new(
+                            TokenKind::Ident,
+                            Some("anotherVar".to_string())
+                        )
+                    )
+                ))
             )
         ))
     );
 
     assert_eq!(
         program.to_string(),
-        "let myVar = dummy;",
+        "let myVar = anotherVar;",
         "program.to_string() wrong. got={:?}",
         program.to_string()
     );
