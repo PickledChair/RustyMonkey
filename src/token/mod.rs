@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum TokenKind {
     Illegal,
@@ -40,6 +42,46 @@ pub enum TokenKind {
     Return,
 }
 
+impl TokenKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Illegal => "ILLEGAL",
+            Self::Eof => "EOF",
+            Self::Ident => "IDENT",
+            Self::Int => "INT",
+            Self::Assign => "=",
+            Self::Plus => "+",
+            Self::Minus => "-",
+            Self::Bang => "!",
+            Self::Asterisk => "*",
+            Self::Slash => "/",
+            Self::Lt => "<",
+            Self::Gt => ">",
+            Self::Eq => "==",
+            Self::NotEq => "!=",
+            Self::Comma => ",",
+            Self::Semicolon => ";",
+            Self::Lparen => "(",
+            Self::Rparen => ")",
+            Self::Lbrace => "{",
+            Self::Rbrace => "}",
+            Self::Function => "fn",
+            Self::Let => "let",
+            Self::True => "true",
+            Self::False => "false",
+            Self::If => "if",
+            Self::Else => "else",
+            Self::Return => "return",
+        }
+    }
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Token {
     kind: TokenKind,
@@ -63,29 +105,7 @@ impl Token {
                 .map_or("".to_string(), |l| l),
             TokenKind::Int => self.literal.clone()
                 .map_or("".to_string(), |l| l),
-            TokenKind::Assign => String::from("="),
-            TokenKind::Plus => String::from("+"),
-            TokenKind::Minus => String::from("-"),
-            TokenKind::Bang => String::from("!"),
-            TokenKind::Asterisk => String::from("*"),
-            TokenKind::Slash => String::from("/"),
-            TokenKind::Lt => String::from("<"),
-            TokenKind::Gt => String::from(">"),
-            TokenKind::Eq => String::from("=="),
-            TokenKind::NotEq => String::from("!="),
-            TokenKind::Comma => String::from(","),
-            TokenKind::Semicolon => String::from(";"),
-            TokenKind::Lparen => String::from("("),
-            TokenKind::Rparen => String::from(")"),
-            TokenKind::Lbrace => String::from("{"),
-            TokenKind::Rbrace => String::from("}"),
-            TokenKind::Function => String::from("fn"),
-            TokenKind::Let => String::from("let"),
-            TokenKind::True => String::from("true"),
-            TokenKind::False => String::from("false"),
-            TokenKind::If => String::from("if"),
-            TokenKind::Else => String::from("else"),
-            TokenKind::Return => String::from("return"),
+            other => other.as_str().to_string()
         }
     }
 }

@@ -2,9 +2,8 @@ use super::{ast::*, lexer::*, token::*};
 
 use std::iter::Peekable;
 
-fn peek_error_msg<T1: AsRef<str>, T2: AsRef<str>>(expect: T1, instead: T2) -> String {
-    String::from("expected next token to be ")
-        + expect.as_ref() + ", got " + instead.as_ref() + " instead"
+fn peek_error_msg(expect: TokenKind, instead: TokenKind) -> String {
+    format!("expected next token to be {}, got {} instead", expect, instead)
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -61,7 +60,7 @@ impl<'a> Parser<'a> {
     fn expect_peek(&mut self, kind: TokenKind) -> Result<(), String> {
         if let Some(tok) = self.lex.peek() {
             if tok.kind() != kind {
-                return Err(peek_error_msg(format!("{:?}", kind), format!("{:?}", tok.get_literal())));
+                return Err(peek_error_msg(kind, tok.kind()));
             }
         }
         self.next_token();
