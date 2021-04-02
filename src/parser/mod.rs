@@ -72,7 +72,7 @@ impl<'a> Parser<'a> {
         get_precedence(self.cur_token.kind())
     }
 
-    fn parse_program(&mut self) -> Program {
+    pub fn parse_program(&mut self) -> Program {
         let mut program = Program::new();
 
         while self.cur_token.kind() != TokenKind::Eof {

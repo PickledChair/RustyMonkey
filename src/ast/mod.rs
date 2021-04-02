@@ -435,7 +435,13 @@ impl NodeExt for FunctionLiteral {
     fn to_string(&self) -> String {
         let mut ret = self.token_literal() + "(";
 
+        let mut is_first = true;
         for param in &self.parameters {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
             ret = ret + &param.to_string();
         }
 
