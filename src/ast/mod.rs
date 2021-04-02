@@ -40,7 +40,7 @@ impl NodeExt for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     Let(Box<LetStatement>),
     Return(Box<ReturnStatement>),
@@ -65,7 +65,7 @@ impl NodeExt for Statement {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
@@ -98,7 +98,7 @@ impl NodeExt for LetStatement {
 
 impl StatementExt for LetStatement {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReturnStatement {
     pub token: Token,
     pub ret_value: Expression,
@@ -127,7 +127,7 @@ impl NodeExt for ReturnStatement {
 
 impl StatementExt for ReturnStatement {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Expression,
@@ -155,12 +155,45 @@ impl NodeExt for ExpressionStatement {
 impl StatementExt for ExpressionStatement {}
 
 #[derive(Debug, Clone)]
+pub struct BlockStatement {
+    pub token: Token,
+    pub statements: Vec<Statement>,
+}
+
+impl BlockStatement {
+    pub fn new(token: Token) -> BlockStatement {
+        BlockStatement {
+            token, statements: Vec::new()
+        }
+    }
+}
+
+impl NodeExt for BlockStatement {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        let mut ret = String::new();
+
+        for stmt in &self.statements {
+            ret = ret + &stmt.to_string();
+        }
+
+        ret
+    }
+}
+
+impl StatementExt for BlockStatement {}
+
+#[derive(Debug, Clone)]
 pub enum Expression {
     Identifier(Box<Identifier>),
     IntLiteral(Box<IntegerLiteral>),
     PrefixExpr(Box<PrefixExpression>),
     InfixExpr(Box<InfixExpression>),
     Boolean(Box<Boolean>),
+    IfExpr(Box<IfExpression>),
 }
 
 impl NodeExt for Expression {
@@ -171,6 +204,7 @@ impl NodeExt for Expression {
             Expression::PrefixExpr(prefix_expr) => prefix_expr.token_literal(),
             Expression::InfixExpr(infix_expr) => infix_expr.token_literal(),
             Expression::Boolean(boolean) => boolean.token_literal(),
+            Expression::IfExpr(if_expr) => if_expr.token_literal(),
         }
     }
 
@@ -181,6 +215,7 @@ impl NodeExt for Expression {
             Expression::PrefixExpr(prefix_expr) => prefix_expr.to_string(),
             Expression::InfixExpr(infix_expr) => infix_expr.to_string(),
             Expression::Boolean(boolean) => boolean.to_string(),
+            Expression::IfExpr(if_expr) => if_expr.to_string(),
         }
     }
 }
@@ -331,6 +366,50 @@ impl NodeExt for Boolean {
 }
 
 impl ExpressionExt for Boolean {}
+
+#[derive(Debug, Clone)]
+pub struct IfExpression {
+    pub token: Token,
+    pub condition: Expression,
+    pub consequence: BlockStatement,
+    pub alternative: Option<BlockStatement>,
+}
+
+impl IfExpression {
+    pub fn new(
+        token: Token,
+        condition: Expression,
+        consequence: BlockStatement,
+        alternative: Option<BlockStatement>
+    ) -> IfExpression
+    {
+        IfExpression {
+            token, condition, consequence, alternative
+        }
+    }
+}
+
+impl NodeExt for IfExpression {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        let mut ret = String::from("if")
+            + &self.condition.to_string()
+            + " "
+            + &self.consequence.to_string();
+
+        if let Some(alternative) = &self.alternative {
+            ret = ret + "else ";
+            ret = ret + &alternative.to_string();
+        }
+
+        ret
+    }
+}
+
+impl ExpressionExt for IfExpression {}
 
 #[cfg(test)]
 mod ast_test;

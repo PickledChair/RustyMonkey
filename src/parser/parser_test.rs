@@ -515,3 +515,164 @@ fn test_operator_precedence_parsing() {
         );
     }
 }
+
+#[test]
+pub fn test_if_expression() {
+    let input = "if (x < y) { x }";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let mut program = p.parse_program();
+    check_parser_errors(&p);
+
+    assert_eq!(
+        program.statements.len(), 1,
+        "program.statements does not contain {} statements. got={}",
+        1, program.statements.len()
+    );
+
+    let stmt = program.statements.pop().unwrap();
+
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::IfExpr(if_expr) => {
+                    test_infix_expression(
+                        if_expr.condition,
+                        &Expected::Str("x".to_string()),
+                        "<".to_string(),
+                        &Expected::Str("y".to_string())
+                    );
+
+                    assert_eq!(
+                        if_expr.consequence.statements.len(), 1,
+                        "consequence is not 1 statements. got={}",
+                        if_expr.consequence.statements.len()
+                    );
+
+                    let mut statements = if_expr.consequence.statements;
+                    let consequence = statements.pop().unwrap();
+                    match consequence {
+                        Statement::ExprStmt(expr_stmt) => {
+                            let expr = expr_stmt.expression;
+                            test_identifier(expr, "x");
+                        },
+                        _ => {
+                            panic!(
+                                "statements[0] is not Statement::ExprStmt(_). got={:?}",
+                                consequence
+                            );
+                        }
+                    }
+
+                    assert!(
+                        if_expr.alternative.is_none(),
+                        "if_expr.alternative.statements was not nil. got={:?}",
+                        if_expr.alternative.unwrap()
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr_stmt.expression is not Expression::IfExpr(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "program.statements[0] is not Expression::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+pub fn test_if_else_expression() {
+    let input = "if (x < y) { x } else { y }";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let mut program = p.parse_program();
+    check_parser_errors(&p);
+
+    assert_eq!(
+        program.statements.len(), 1,
+        "program.statements does not contain {} statements. got={}",
+        1, program.statements.len()
+    );
+
+    let stmt = program.statements.pop().unwrap();
+
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::IfExpr(if_expr) => {
+                    test_infix_expression(
+                        if_expr.condition,
+                        &Expected::Str("x".to_string()),
+                        "<".to_string(),
+                        &Expected::Str("y".to_string())
+                    );
+
+                    assert_eq!(
+                        if_expr.consequence.statements.len(), 1,
+                        "consequence is not 1 statements. got={}",
+                        if_expr.consequence.statements.len()
+                    );
+
+                    let mut statements = if_expr.consequence.statements;
+                    let consequence = statements.pop().unwrap();
+                    match consequence {
+                        Statement::ExprStmt(expr_stmt) => {
+                            let expr = expr_stmt.expression;
+                            test_identifier(expr, "x");
+                        },
+                        _ => {
+                            panic!(
+                                "statements[0] is not Statement::ExprStmt(_). got={:?}",
+                                consequence
+                            );
+                        }
+                    }
+
+                    assert!(
+                        if_expr.alternative.is_some(),
+                        "if_expr.alternative.statements was nil. got={:?}",
+                        if_expr.alternative
+                    );
+
+                    let mut statements_ = if_expr.alternative.unwrap().statements;
+                    let alternative = statements_.pop().unwrap();
+                    match alternative {
+                        Statement::ExprStmt(expr_stmt) => {
+                            let expr = expr_stmt.expression;
+                            test_identifier(expr, "y");
+                        },
+                        _ => {
+                            panic!(
+                                "statements[0] is not Statement::ExprStmt(_). got={:?}",
+                                alternative
+                            );
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "expr_stmt.expression is not Expression::IfExpr(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "program.statements[0] is not Expression::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}

@@ -141,6 +141,22 @@ impl<'a> Parser<'a> {
         Ok(stmt)
     }
 
+    fn parse_block_statement(&mut self) -> BlockStatement {
+        let mut block = BlockStatement::new(self.cur_token.clone());
+
+        self.next_token();
+
+        while !matches!(self.cur_token.kind(), TokenKind::Rbrace | TokenKind::Eof) {
+            let stmt = self.parse_statement();
+            if let Ok(stmt) = stmt {
+                block.statements.push(stmt);
+            }
+            self.next_token();
+        }
+
+        block
+    }
+
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, String> {
         use TokenKind::*;
 
@@ -150,6 +166,7 @@ impl<'a> Parser<'a> {
             True | False => self.parse_boolean()?,
             Bang | Minus => self.parse_prefix_expression()?,
             Lparen => self.parse_grouped_expression()?,
+            If => self.parse_if_expression()?,
             _ => return Err(format!("no prefix parse function for {:?} found", self.cur_token.kind()))
         };
 
@@ -222,6 +239,37 @@ impl<'a> Parser<'a> {
         self.expect_peek(TokenKind::Rparen)?;
 
         Ok(exp)
+    }
+
+    fn parse_if_expression(&mut self) -> Result<Expression, String> {
+        let cur_token = self.cur_token.clone();
+
+        self.expect_peek(TokenKind::Lparen)?;
+        self.next_token();
+
+        let condition = self.parse_expression(Lowest)?;
+
+        self.expect_peek(TokenKind::Rparen)?;
+
+        self.expect_peek(TokenKind::Lbrace)?;
+
+        let consequence = self.parse_block_statement();
+
+        let alternative = if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Else {
+                self.next_token();
+                self.expect_peek(TokenKind::Lbrace)?;
+                Some(self.parse_block_statement())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        Ok(Expression::IfExpr(Box::new(
+            IfExpression::new(cur_token, condition, consequence, alternative)
+        )))
     }
 }
 
