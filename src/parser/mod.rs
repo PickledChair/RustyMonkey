@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
             Lparen => self.parse_grouped_expression()?,
             If => self.parse_if_expression()?,
             Function => self.parse_function_literal()?,
-            _ => return Err(format!("no prefix parse function for {:?} found", self.cur_token.kind()))
+            _ => return Err(format!("no prefix parse function for {} found", self.cur_token.kind()))
         };
 
         loop {
