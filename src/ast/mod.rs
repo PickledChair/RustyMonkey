@@ -195,6 +195,7 @@ pub enum Expression {
     Boolean(Box<Boolean>),
     IfExpr(Box<IfExpression>),
     FuncLiteral(Box<FunctionLiteral>),
+    CallExpr(Box<CallExpression>),
 }
 
 impl NodeExt for Expression {
@@ -207,6 +208,7 @@ impl NodeExt for Expression {
             Expression::Boolean(boolean) => boolean.token_literal(),
             Expression::IfExpr(if_expr) => if_expr.token_literal(),
             Expression::FuncLiteral(func_lit) => func_lit.token_literal(),
+            Expression::CallExpr(call_expr) => call_expr.token_literal(),
         }
     }
 
@@ -219,6 +221,7 @@ impl NodeExt for Expression {
             Expression::Boolean(boolean) => boolean.to_string(),
             Expression::IfExpr(if_expr) => if_expr.to_string(),
             Expression::FuncLiteral(func_lit) => func_lit.to_string(),
+            Expression::CallExpr(call_expr) => call_expr.to_string(),
         }
     }
 }
@@ -448,6 +451,45 @@ impl NodeExt for FunctionLiteral {
 }
 
 impl ExpressionExt for FunctionLiteral {}
+
+#[derive(Debug, Clone)]
+pub struct CallExpression {
+    pub token: Token,           // '(' トークン
+    pub function: Expression,   // Identifier または FunctionLiteral
+    pub arguments: Vec<Expression>,
+}
+
+impl CallExpression {
+    pub fn new(token: Token, function: Expression) -> CallExpression {
+        CallExpression {
+            token, function, arguments: Vec::new()
+        }
+    }
+}
+
+impl NodeExt for CallExpression {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        let mut ret = self.function.to_string() + "(";
+
+        let mut is_first = true;
+        for arg in &self.arguments {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
+            ret = ret + &arg.to_string();
+        }
+
+        ret + ")"
+    }
+}
+
+impl ExpressionExt for CallExpression {}
 
 #[cfg(test)]
 mod ast_test;

@@ -30,6 +30,7 @@ fn get_precedence(kind: TokenKind) -> Precedence {
         TokenKind::Minus => Sum,
         TokenKind::Slash => Product,
         TokenKind::Asterisk => Product,
+        TokenKind::Lparen => Call,
         _ => Lowest,
     }
 }
@@ -182,6 +183,12 @@ impl<'a> Parser<'a> {
                             left_exp = self.parse_infix_expression(left_exp)?;
                             continue;
                         },
+                        Lparen => {
+                            self.next_token();
+
+                            left_exp = self.parse_call_expression(left_exp)?;
+                            continue;
+                        }
                         _ => ()
                     }
                 }
@@ -321,6 +328,43 @@ impl<'a> Parser<'a> {
         Ok(Expression::FuncLiteral(Box::new(
             FunctionLiteral::new(cur_token, parameters, body)
         )))
+    }
+
+    fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, String> {
+        let mut args = Vec::new();
+
+        if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Rparen {
+                self.next_token();
+                return Ok(args);
+            }
+        }
+
+        self.next_token();
+        args.push(self.parse_expression(Lowest)?);
+
+        loop {
+            if let Some(tok) = self.lex.peek() {
+                if tok.kind() == TokenKind::Comma {
+                    self.next_token();
+                    self.next_token();
+                    args.push(self.parse_expression(Lowest)?);
+                    continue;
+                }
+                break;
+            }
+            break;
+        }
+
+        self.expect_peek(TokenKind::Rparen)?;
+
+        Ok(args)
+    }
+
+    fn parse_call_expression(&mut self, function: Expression) -> Result<Expression, String> {
+        let mut exp = CallExpression::new(self.cur_token.clone(), function);
+        exp.arguments = self.parse_call_arguments()?;
+        Ok(Expression::CallExpr(Box::new(exp)))
     }
 }
 

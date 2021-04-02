@@ -500,7 +500,19 @@ fn test_operator_precedence_parsing() {
         (
             "!(true == true)",
             "(!(true == true))"
-        )
+        ),
+        (
+            "a + add(b * c) + d",
+            "((a + add((b * c))) + d)"
+        ),
+        (
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"
+        ),
+        (
+            "add(a + b + c * d / f + g)",
+            "add((((a + b) + ((c * d) / f)) + g))"
+        ),
     ];
 
     for (input, expected) in tests.iter() {
@@ -801,6 +813,69 @@ fn test_function_parameter_parsing() {
                     stmt
                 );
             }
+        }
+    }
+}
+
+#[test]
+fn test_call_expression_parsing() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    assert_eq!(
+        program.statements.len(), 1,
+        "program.statements does not contain {} statements. got={}",
+        1, program.statements.len()
+    );
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let exp = expr_stmt.expression;
+            match exp {
+                Expression::CallExpr(call_expr) => {
+                    test_identifier(call_expr.function, "add");
+
+                    assert_eq!(
+                        call_expr.arguments.len(), 3,
+                        "wrong length of arguments. want {}, got={}",
+                        3, call_expr.arguments.len()
+                    );
+
+                    test_literal_expression(
+                        call_expr.arguments[0].clone(),
+                        &Expected::Int64(1)
+                    );
+                    test_infix_expression(
+                        call_expr.arguments[1].clone(),
+                        &Expected::Int64(2),
+                        "*".to_string(),
+                        &Expected::Int64(3)
+                    );
+                    test_infix_expression(
+                        call_expr.arguments[2].clone(),
+                        &Expected::Int64(4),
+                        "+".to_string(),
+                        &Expected::Int64(5)
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr_stmt.expression is not Expression::FuncLiteral(_). got={:?}",
+                        exp
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
         }
     }
 }
