@@ -167,6 +167,7 @@ impl<'a> Parser<'a> {
             Bang | Minus => self.parse_prefix_expression()?,
             Lparen => self.parse_grouped_expression()?,
             If => self.parse_if_expression()?,
+            Function => self.parse_function_literal()?,
             _ => return Err(format!("no prefix parse function for {:?} found", self.cur_token.kind()))
         };
 
@@ -269,6 +270,56 @@ impl<'a> Parser<'a> {
 
         Ok(Expression::IfExpr(Box::new(
             IfExpression::new(cur_token, condition, consequence, alternative)
+        )))
+    }
+
+    fn parse_function_parameters(&mut self) -> Result<Vec<Identifier>, String> {
+        let mut identifiers = Vec::new();
+
+        if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Rparen {
+                self.next_token();
+                return Ok(identifiers);
+            }
+        }
+
+        self.next_token();
+
+        let ident = Identifier::new(self.cur_token.clone());
+        identifiers.push(ident);
+
+        loop {
+            if let Some(tok) = self.lex.peek() {
+                if tok.kind() == TokenKind::Comma {
+                    self.next_token();
+                    self.next_token();
+                    let ident = Identifier::new(self.cur_token.clone());
+                    identifiers.push(ident);
+                    continue;
+                }
+                break;
+            }
+            break;
+        }
+
+        self.expect_peek(TokenKind::Rparen)?;
+
+        Ok(identifiers)
+    }
+
+    fn parse_function_literal(&mut self) -> Result<Expression, String> {
+        let cur_token = self.cur_token.clone();
+
+        self.expect_peek(TokenKind::Lparen)?;
+
+        let parameters = self.parse_function_parameters()?;
+
+        self.expect_peek(TokenKind::Lbrace)?;
+
+        let body = self.parse_block_statement();
+
+        Ok(Expression::FuncLiteral(Box::new(
+            FunctionLiteral::new(cur_token, parameters, body)
         )))
     }
 }

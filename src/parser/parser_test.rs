@@ -676,3 +676,131 @@ pub fn test_if_else_expression() {
         }
     }
 }
+
+#[test]
+fn test_function_literal_parsing() {
+    let input = "fn(x, y) { x + y; }";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let mut program = p.parse_program();
+    check_parser_errors(&p);
+
+    assert_eq!(
+        program.statements.len(), 1,
+        "program.statements does not contain {} statements. got={}",
+        1, program.statements.len()
+    );
+
+    let stmt = program.statements.pop().unwrap();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let exp = expr_stmt.expression;
+            match exp {
+                Expression::FuncLiteral(func_lit) => {
+                    assert_eq!(
+                        func_lit.parameters.len(), 2,
+                        "function literal parameters wrong. want {}, got={}",
+                        2, func_lit.parameters.len()
+                    );
+
+                    test_literal_expression(
+                        Expression::Identifier(Box::new(func_lit.parameters[0].clone())),
+                        &Expected::Str("x".to_string())
+                    );
+                    test_literal_expression(
+                        Expression::Identifier(Box::new(func_lit.parameters[1].clone())),
+                        &Expected::Str("y".to_string())
+                    );
+
+                    assert_eq!(
+                        func_lit.body.statements.len(), 1,
+                        "func_lit.body.statements has not {} statements. got={}",
+                        1, func_lit.body.statements.len()
+                    );
+
+                    let body_stmt = func_lit.body.statements[0].clone();
+                    match body_stmt {
+                        Statement::ExprStmt(expr_stmt) => {
+                            test_infix_expression(
+                                expr_stmt.expression,
+                                &Expected::Str("x".to_string()),
+                                "+".to_string(),
+                                &Expected::Str("y".to_string())
+                            );
+                        },
+                        _ => {
+                            panic!(
+                                "function body stmt is not Expression::ExprStmt(_). got={:?}",
+                                body_stmt
+                            );
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "expr_stmt.expression is not Expression::FuncLiteral(_). got={:?}",
+                        exp
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+fn test_function_parameter_parsing() {
+    let tests = [
+        ("fn() {};", vec![]),
+        ("fn(x) {};", vec!["x".to_string()]),
+        ("fn(x, y, z) {};", ["x", "y", "z"].iter().map(|s| s.to_string()).collect()),
+    ];
+
+    for (input, expected_params) in &tests {
+        let l = Lexer::new(input).unwrap();
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+        check_parser_errors(&p);
+
+        let stmt = program.statements[0].clone();
+        match stmt {
+            Statement::ExprStmt(expr_stmt) => {
+                let exp = expr_stmt.expression;
+                match exp {
+                    Expression::FuncLiteral(func) => {
+                        assert_eq!(
+                            func.parameters.len(), expected_params.len(),
+                            "length parameters wrong. want {}, got={}",
+                            expected_params.len(), func.parameters.len()
+                        );
+
+                        for (i, ident) in expected_params.iter().enumerate() {
+                            test_literal_expression(
+                                Expression::Identifier(Box::new(func.parameters[i].clone())),
+                                &Expected::Str(ident.to_string())
+                            );
+                        }
+                    },
+                    _ => {
+                        panic!(
+                            "expr_stmt.expression is not Expression::FuncLiteral(_). got={:?}",
+                            exp
+                        );
+                    }
+                }
+            },
+            _ => {
+                panic!(
+                    "program.statements[0] is not Statement::ExprStmt(_). got={:?}",
+                    stmt
+                );
+            }
+        }
+    }
+}
