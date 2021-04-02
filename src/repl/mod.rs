@@ -4,7 +4,7 @@ use std::io::{self, BufRead, Write};
 
 const PROMPT: &'static [u8] = b">> ";
 
-const MONKEY_FACE: &'static [u8] = br##"            __,__
+const MONKEY_FACE: &'static [u8] = br#"            __,__
    .--.  .-"     "-.  .--.
   / .. \/  .-. .-.  \/ .. \
  | |  '|  /   Y   \  |'  | |
@@ -15,7 +15,7 @@ const MONKEY_FACE: &'static [u8] = br##"            __,__
        \   \ '~' /   /
         '._ '-=-' _.'
            '-----'
-"##;
+"#;
 
 pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
     'monkey_repl: loop {
