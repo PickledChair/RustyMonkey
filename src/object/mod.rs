@@ -26,6 +26,24 @@ pub enum Object {
     Null(Null),
 }
 
+impl ObjectExt for Object {
+    fn get_type(&self) -> ObjectType {
+        match self {
+            Self::Integer(integer) => integer.get_type(),
+            Self::Boolean(boolean) => boolean.get_type(),
+            Self::Null(null) => null.get_type(),
+        }
+    }
+
+    fn inspect(&self) -> String {
+        match self {
+            Self::Integer(integer) => integer.inspect(),
+            Self::Boolean(boolean) => boolean.inspect(),
+            Self::Null(null) => null.inspect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Integer {
     pub value: i64,

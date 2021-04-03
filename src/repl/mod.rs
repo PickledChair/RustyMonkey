@@ -1,4 +1,10 @@
-use super::{lexer::*, ast::*, parser::*};
+use super::{
+    lexer::*,
+    ast::*,
+    parser::*,
+    object::*,
+    evaluator::*,
+};
 
 use std::io::{self, BufRead, Write};
 
@@ -38,8 +44,12 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
                     continue;
                 }
 
-                out.write_all(program.to_string().as_str().as_bytes())?;
-                out.write_all(b"\n")?;
+                let evaluated = eval(program.to_node());
+                if let Some(evaluated) = evaluated {
+                    out.write_all(evaluated.inspect().as_str().as_bytes())?;
+                    out.write_all(b"\n")?;
+                    out.flush()?;
+                }
             },
             Err(msg) => {
                 out.write_all(&mut msg.as_bytes())?;
