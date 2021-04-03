@@ -11,6 +11,8 @@ fn test_eval_integer_expression() {
     let tests = [
         ("5", 5),
         ("10", 10),
+        ("-5", -5),
+        ("-10", -10),
     ];
 
     for (input, expected) in &tests {
@@ -75,5 +77,22 @@ fn test_boolean_object(obj: Object, expected: bool) {
                 other
             );
         }
+    }
+}
+
+#[test]
+fn test_bang_operator() {
+    let tests = [
+        ("!true", false),
+        ("!false", true),
+        ("!5", false),
+        ("!!true", true),
+        ("!!false", false),
+        ("!!5", true),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+        test_boolean_object(evaluated, *expected);
     }
 }

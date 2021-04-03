@@ -2,6 +2,7 @@ pub const TRUE : Object = Object::Bool(Bool { value: true });
 pub const FALSE: Object = Object::Bool(Bool { value: false});
 pub const NULL : Object = Object::Null(Null {});
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum ObjectType {
     IntegerObj,
     BoolObj,
@@ -23,7 +24,7 @@ pub trait ObjectExt {
     fn inspect(&self) -> String;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
@@ -96,7 +97,7 @@ impl From<Bool> for Object {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Null {}
 
 impl ObjectExt for Null {
