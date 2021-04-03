@@ -1,5 +1,6 @@
 pub const TRUE : Object = Object::Bool(Bool { value: true });
 pub const FALSE: Object = Object::Bool(Bool { value: false});
+pub const NULL : Object = Object::Null(Null {});
 
 pub enum ObjectType {
     IntegerObj,
