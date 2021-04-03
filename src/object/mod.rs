@@ -31,6 +31,17 @@ pub enum Object {
     Null(Null),
 }
 
+impl Object {
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            &NULL => false,
+            &TRUE => true,
+            &FALSE => false,
+            _ => true,
+        }
+    }
+}
+
 impl ObjectExt for Object {
     fn get_type(&self) -> ObjectType {
         match self {

@@ -124,3 +124,31 @@ fn test_bang_operator() {
         test_boolean_object(evaluated, *expected);
     }
 }
+
+#[test]
+fn test_if_else_expressions() {
+    let tests = [
+        ("if (true) { 10 }", Some(10)),
+        ("if (false) { 10 }", None),
+        ("if (1) { 10 }", Some(10)),
+        ("if (1 < 2) { 10 }", Some(10)),
+        ("if (1 > 2) { 10 }", None),
+        ("if (1 > 2) { 10 } else { 20 }", Some(20)),
+        ("if (1 < 2) { 10 } else { 20 }", Some(10)),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+        match evaluated {
+            Object::Integer(_) => {
+                assert!(expected.is_some(), "expected is not Some(num).");
+                test_integer_object(evaluated, expected.unwrap());
+            },
+            _ => test_null_object(evaluated)
+        }
+    }
+}
+
+fn test_null_object(obj: Object) {
+    assert_eq!(obj, NULL, "object is not NULL. got={:?}", obj);
+}

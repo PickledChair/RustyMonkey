@@ -19,6 +19,8 @@ pub fn eval(node: Node) -> Option<Object> {
                 &infix.operator, left, right
             ))
         },
+        Node::BlockStatement(block) => eval_statements(block.statements),
+        Node::IfExpr(if_expr) => eval_if_expression(if_expr),
         _ => None
     }
 }
@@ -109,6 +111,18 @@ fn eval_integer_infix_expression(
         "==" => (left_val == right_val).into(),
         "!=" => (left_val != right_val).into(),
         _ => NULL
+    }
+}
+
+fn eval_if_expression(if_expr: IfExpression) -> Option<Object> {
+    let condition = eval(if_expr.condition.to_node())?;
+
+    if condition.is_truthy() {
+        eval(if_expr.consequence.to_node())
+    } else if if_expr.alternative.is_some() {
+        eval(if_expr.alternative.unwrap().to_node())
+    } else {
+        Some(NULL)
     }
 }
 
