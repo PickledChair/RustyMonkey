@@ -1,8 +1,24 @@
 use super::token::*;
 
+pub enum Node {
+    Program(Program),
+    LetStatement(LetStatement),
+    ReturnStatement(ReturnStatement),
+    BlockStatement(BlockStatement),
+    Identifier(Identifier),
+    IntLiteral(IntegerLiteral),
+    PrefixExpr(PrefixExpression),
+    InfixExpr(InfixExpression),
+    Boolean(Boolean),
+    IfExpr(IfExpression),
+    FuncLiteral(FunctionLiteral),
+    CallExpr(CallExpression),
+}
+
 pub trait NodeExt {
     fn token_literal(&self) -> String;
     fn to_string(&self) -> String;
+    fn to_node(self) -> Node;
 }
 
 pub trait StatementExt: NodeExt {}
@@ -38,6 +54,10 @@ impl NodeExt for Program {
             "".to_string()
         }
     }
+
+    fn to_node(self) -> Node {
+        Node::Program(self)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -61,6 +81,14 @@ impl NodeExt for Statement {
             Statement::Let(let_stmt) => let_stmt.to_string(),
             Statement::Return(ret_stmt) => ret_stmt.to_string(),
             Statement::ExprStmt(expr_stmt) => expr_stmt.to_string(),
+        }
+    }
+
+    fn to_node(self) -> Node {
+        match self {
+            Statement::Let(let_stmt) => let_stmt.to_node(),
+            Statement::Return(ret_stmt) => ret_stmt.to_node(),
+            Statement::ExprStmt(expr_stmt) => expr_stmt.to_node(),
         }
     }
 }
@@ -90,6 +118,10 @@ impl NodeExt for LetStatement {
             + self.value.to_string().as_str()
             + ";"
     }
+
+    fn to_node(self) -> Node {
+        Node::LetStatement(self)
+    }
 }
 
 impl StatementExt for LetStatement {}
@@ -115,6 +147,10 @@ impl NodeExt for ReturnStatement {
         self.token.get_literal() + " "
             + self.ret_value.to_string().as_str()
             + ";"
+    }
+
+    fn to_node(self) -> Node {
+        Node::ReturnStatement(self)
     }
 }
 
@@ -142,6 +178,19 @@ impl NodeExt for ExpressionStatement {
 
     fn to_string(&self) -> String {
         self.expression.to_string()
+    }
+
+    fn to_node(self) -> Node {
+        match self.expression {
+            Expression::Boolean(boolean) => boolean.to_node(),
+            Expression::CallExpr(call) => call.to_node(),
+            Expression::FuncLiteral(func) => func.to_node(),
+            Expression::Identifier(ident) => ident.to_node(),
+            Expression::IfExpr(if_expr) => if_expr.to_node(),
+            Expression::InfixExpr(infix) => infix.to_node(),
+            Expression::IntLiteral(int_lit) => int_lit.to_node(),
+            Expression::PrefixExpr(prefix) => prefix.to_node(),
+        }
     }
 }
 
@@ -174,6 +223,10 @@ impl NodeExt for BlockStatement {
         }
 
         ret
+    }
+
+    fn to_node(self) -> Node {
+        Node::BlockStatement(self)
     }
 }
 
@@ -217,6 +270,19 @@ impl NodeExt for Expression {
             Expression::CallExpr(call_expr) => call_expr.to_string(),
         }
     }
+
+    fn to_node(self) -> Node {
+        match self {
+            Expression::Identifier(ident) => ident.to_node(),
+            Expression::IntLiteral(int_lit) => int_lit.to_node(),
+            Expression::PrefixExpr(prefix_expr) => prefix_expr.to_node(),
+            Expression::InfixExpr(infix_expr) => infix_expr.to_node(),
+            Expression::Boolean(boolean) => boolean.to_node(),
+            Expression::IfExpr(if_expr) => if_expr.to_node(),
+            Expression::FuncLiteral(func_lit) => func_lit.to_node(),
+            Expression::CallExpr(call_expr) => call_expr.to_node(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -239,6 +305,10 @@ impl NodeExt for Identifier {
 
     fn to_string(&self) -> String {
         self.token.get_literal()
+    }
+
+    fn to_node(self) -> Node {
+        Node::Identifier(self)
     }
 }
 
@@ -271,6 +341,10 @@ impl NodeExt for IntegerLiteral {
     fn to_string(&self) -> String {
         self.token.get_literal()
     }
+
+    fn to_node(self) -> Node {
+        Node::IntLiteral(self)
+    }
 }
 
 impl ExpressionExt for IntegerLiteral {}
@@ -301,6 +375,10 @@ impl NodeExt for PrefixExpression {
             + &(self.operator)
             + &(self.right.to_string())
             + ")"
+    }
+
+    fn to_node(self) -> Node {
+        Node::PrefixExpr(self)
     }
 }
 
@@ -333,6 +411,10 @@ impl NodeExt for InfixExpression {
             + &self.right.to_string()
             + ")"
     }
+
+    fn to_node(self) -> Node {
+        Node::InfixExpr(self)
+    }
 }
 
 impl ExpressionExt for InfixExpression {}
@@ -361,6 +443,10 @@ impl NodeExt for Boolean {
 
     fn to_string(&self) -> String {
         self.token.get_literal()
+    }
+
+    fn to_node(self) -> Node {
+        Node::Boolean(self)
     }
 }
 
@@ -406,6 +492,10 @@ impl NodeExt for IfExpression {
 
         ret
     }
+
+    fn to_node(self) -> Node {
+        Node::IfExpr(self)
+    }
 }
 
 impl ExpressionExt for IfExpression {}
@@ -447,6 +537,10 @@ impl NodeExt for FunctionLiteral {
 
         ret + ")" + &self.body.to_string()
     }
+
+    fn to_node(self) -> Node {
+        Node::FuncLiteral(self)
+    }
 }
 
 impl ExpressionExt for FunctionLiteral {}
@@ -485,6 +579,10 @@ impl NodeExt for CallExpression {
         }
 
         ret + ")"
+    }
+
+    fn to_node(self) -> Node {
+        Node::CallExpr(self)
     }
 }
 
