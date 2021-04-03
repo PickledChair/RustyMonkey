@@ -9,6 +9,9 @@ pub fn eval(node: Node) -> Option<Object> {
         Node::IntLiteral(int_lit) => Some(
             Object::Integer(Integer::new(int_lit.value))
         ),
+        Node::Boolean(boolean) => Some(
+            if boolean.value { TRUE } else { FALSE }
+        ),
         _ => None
     }
 }

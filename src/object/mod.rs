@@ -1,6 +1,9 @@
+pub const TRUE : Object = Object::Bool(Bool { value: true });
+pub const FALSE: Object = Object::Bool(Bool { value: false});
+
 pub enum ObjectType {
     IntegerObj,
-    BooleanObj,
+    BoolObj,
     NullObj,
 }
 
@@ -8,7 +11,7 @@ impl ObjectType {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::IntegerObj => "INTEGER",
-            Self::BooleanObj => "BOOLEAN",
+            Self::BoolObj => "BOOLEAN",
             Self::NullObj => "NULL",
         }
     }
@@ -22,7 +25,7 @@ pub trait ObjectExt {
 #[derive(Debug, Clone)]
 pub enum Object {
     Integer(Integer),
-    Boolean(Boolean),
+    Bool(Bool),
     Null(Null),
 }
 
@@ -30,7 +33,7 @@ impl ObjectExt for Object {
     fn get_type(&self) -> ObjectType {
         match self {
             Self::Integer(integer) => integer.get_type(),
-            Self::Boolean(boolean) => boolean.get_type(),
+            Self::Bool(boolean) => boolean.get_type(),
             Self::Null(null) => null.get_type(),
         }
     }
@@ -38,7 +41,7 @@ impl ObjectExt for Object {
     fn inspect(&self) -> String {
         match self {
             Self::Integer(integer) => integer.inspect(),
-            Self::Boolean(boolean) => boolean.inspect(),
+            Self::Bool(boolean) => boolean.inspect(),
             Self::Null(null) => null.inspect(),
         }
     }
@@ -72,19 +75,13 @@ impl From<Integer> for Object {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct Boolean {
+pub struct Bool {
     pub value: bool,
 }
 
-impl Boolean {
-    pub fn new(value: bool) -> Boolean {
-        Boolean { value }
-    }
-}
-
-impl ObjectExt for Boolean {
+impl ObjectExt for Bool {
     fn get_type(&self) -> ObjectType {
-        ObjectType::BooleanObj
+        ObjectType::BoolObj
     }
 
     fn inspect(&self) -> String {
@@ -92,9 +89,9 @@ impl ObjectExt for Boolean {
     }
 }
 
-impl From<Boolean> for Object {
-    fn from(boolean: Boolean) -> Self {
-        Object::Boolean(boolean)
+impl From<Bool> for Object {
+    fn from(boolean: Bool) -> Self {
+        Object::Bool(boolean)
     }
 }
 

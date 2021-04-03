@@ -46,3 +46,34 @@ fn test_integer_object(obj: Object, expected: i64) {
         }
     }
 }
+
+#[test]
+fn test_eval_boolean_expression() {
+    let tests = [
+        ("true", true),
+        ("false", false),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+        test_boolean_object(evaluated, *expected);
+    }
+}
+
+fn test_boolean_object(obj: Object, expected: bool) {
+    match obj {
+        Object::Bool(boolean) => {
+            assert_eq!(
+                boolean.value, expected,
+                "object has wrong value. got={}, want={}",
+                boolean.value, expected
+            );
+        },
+        other => {
+            panic!(
+                "object is not Boolean. got={:?}",
+                other
+            );
+        }
+    }
+}
