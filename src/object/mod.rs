@@ -91,9 +91,9 @@ impl ObjectExt for Bool {
     }
 }
 
-impl From<Bool> for Object {
-    fn from(boolean: Bool) -> Self {
-        Object::Bool(boolean)
+impl From<bool> for Object {
+    fn from(native_bool: bool) -> Self {
+        if native_bool { TRUE } else { FALSE }
     }
 }
 

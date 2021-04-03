@@ -7,11 +7,18 @@ pub fn eval(node: Node) -> Option<Object> {
     match node {
         Node::Program(program) => eval_statements(program.statements),
         Node::IntLiteral(int_lit) => Some(Integer::new(int_lit.value).into()),
-        Node::Boolean(boolean) => Some(if boolean.value { TRUE } else { FALSE }),
+        Node::Boolean(boolean) => Some(boolean.value.into()),
         Node::PrefixExpr(prefix) => {
             let right = eval(prefix.right.to_node())?;
             Some(eval_prefix_expression(&prefix.operator, right))
-        }
+        },
+        Node::InfixExpr(infix) => {
+            let left = eval(infix.left.to_node())?;
+            let right = eval(infix.right.to_node())?;
+            Some(eval_infix_expression(
+                &infix.operator, left, right
+            ))
+        },
         _ => None
     }
 }
@@ -53,6 +60,55 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
             unreachable!()
         };
         Object::Integer(Integer::new(-value))
+    }
+}
+
+fn eval_infix_expression(
+    operator: &str,
+    left: Object,
+    right: Object
+) -> Object {
+    match left {
+        Object::Integer(left_int) => {
+            match right {
+                Object::Integer(right_int) => {
+                    eval_integer_infix_expression(
+                        operator, left_int, right_int
+                    )
+                },
+                _ => NULL
+            }
+        },
+        _ => {
+            if operator == "==" {
+                (left == right).into()
+            } else if operator == "!=" {
+                (left != right).into()
+            } else {
+                NULL
+            }
+        }
+    }
+}
+
+fn eval_integer_infix_expression(
+    operator: &str,
+    left: Integer,
+    right: Integer
+) -> Object {
+    let left_val = left.value;
+    let right_val = right.value;
+
+    match operator {
+        "+" => Integer::new(left_val + right_val).into(),
+        "-" => Integer::new(left_val - right_val).into(),
+        "*" => Integer::new(left_val * right_val).into(),
+        "/" => Integer::new(left_val / right_val).into(),
+        "<" => (left_val < right_val).into(),
+        ">" => (left_val > right_val).into(),
+        "==" => (left_val == right_val).into(),
+        "!=" => (left_val != right_val).into(),
+        _ => NULL
     }
 }
 
