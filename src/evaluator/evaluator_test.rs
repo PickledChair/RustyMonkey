@@ -37,9 +37,7 @@ fn test_eval(input: &str) -> Object {
     let mut p = Parser::new(l);
     let program = p.parse_program();
 
-    let evaluated = eval(program.to_node());
-    assert!(evaluated.is_some(), "the result of eval(program) is None.");
-    evaluated.unwrap()
+    eval(program.to_node())
 }
 
 fn test_integer_object(obj: Object, expected: i64) {
@@ -174,5 +172,67 @@ if (10 > 1) {
     for (input, expected) in &tests {
         let evaluated = test_eval(input);
         test_integer_object(evaluated, *expected);
+    }
+}
+
+#[test]
+fn test_error_handling() {
+    let tests = [
+        (
+            "5 + true;",
+            "type mismatch: INTEGER + BOOLEAN"
+        ),
+        (
+            "5 + true; 5;",
+            "type mismatch: INTEGER + BOOLEAN"
+        ),
+        (
+            "-true",
+            "unknown operator: -BOOLEAN"
+        ),
+        (
+            "true + false;",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        ),
+        (
+            "5; true + false; 5",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        ),
+        (
+            "if (10 > 1) { true + false; }",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        ),
+        (
+            "
+if (10 > 1) {
+    if (10 > 1) {
+        return true + false;
+    }
+
+    return 1;
+}
+            ",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        ),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+
+        match evaluated {
+            Object::Error(err) => {
+                assert_eq!(
+                    &err.message, expected,
+                    "wrong error message. expected={}, got={}",
+                    expected, &err.message
+                );
+            },
+            other => {
+                panic!(
+                    "no error object returned. got={:?}",
+                    other
+                )
+            }
+        }
     }
 }

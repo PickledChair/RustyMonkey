@@ -1,5 +1,6 @@
 use super::token::*;
 
+#[derive(Debug)]
 pub enum Node {
     Program(Program),
     LetStatement(LetStatement),
@@ -24,6 +25,7 @@ pub trait NodeExt {
 pub trait StatementExt: NodeExt {}
 pub trait ExpressionExt: NodeExt {}
 
+#[derive(Debug)]
 pub struct Program {
     pub statements: Vec<Statement>
 }

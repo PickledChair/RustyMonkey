@@ -8,6 +8,7 @@ pub enum ObjectType {
     BoolObj,
     NullObj,
     ReturnValueObj,
+    ErrorObj,
 }
 
 impl ObjectType {
@@ -17,6 +18,7 @@ impl ObjectType {
             Self::BoolObj => "BOOLEAN",
             Self::NullObj => "NULL",
             Self::ReturnValueObj => "RETURN_VALUE",
+            Self::ErrorObj => "ERROR",
         }
     }
 }
@@ -32,6 +34,7 @@ pub enum Object {
     Bool(Bool),
     ReturnValue(Box<ReturnValue>),
     Null(Null),
+    Error(Error),
 }
 
 impl Object {
@@ -52,6 +55,7 @@ impl ObjectExt for Object {
             Self::Bool(boolean) => boolean.get_type(),
             Self::ReturnValue(ret_val) => ret_val.get_type(),
             Self::Null(null) => null.get_type(),
+            Self::Error(err) => err.get_type(),
         }
     }
 
@@ -61,6 +65,7 @@ impl ObjectExt for Object {
             Self::Bool(boolean) => boolean.inspect(),
             Self::ReturnValue(ret_val) => ret_val.inspect(),
             Self::Null(null) => null.inspect(),
+            Self::Error(err) => err.inspect(),
         }
     }
 }
@@ -156,5 +161,32 @@ impl ObjectExt for ReturnValue {
 impl From<ReturnValue> for Object {
     fn from(ret_val: ReturnValue) -> Object {
         Object::ReturnValue(Box::new(ret_val))
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Error {
+    pub message: String,
+}
+
+impl Error {
+    pub fn new<T: AsRef<str>>(message: T) -> Error {
+        Error { message: message.as_ref().to_string() }
+    }
+}
+
+impl ObjectExt for Error {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::ErrorObj
+    }
+
+    fn inspect(&self) -> String {
+        String::from("ERROR: ") + &self.message
+    }
+}
+
+impl From<Error> for Object {
+    fn from(err: Error) -> Object {
+        Object::Error(err)
     }
 }
