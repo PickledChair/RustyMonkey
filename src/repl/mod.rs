@@ -27,7 +27,7 @@ const MONKEY_FACE: &'static [u8] = br#"            __,__
 "#;
 
 pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
-    let mut env = Environment::new();
+    let env = Environment::new();
     loop {
         out.write_all(PROMPT)?;
         out.flush()?;
@@ -48,7 +48,7 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
                     continue;
                 }
 
-                let evaluated = eval(program.into_node(), &mut env);
+                let evaluated = eval(program.into_node(), env.clone());
                 if let Some(evaluated) = evaluated {
                     out.write_all(evaluated.inspect().as_str().as_bytes())?;
                     out.write_all(b"\n")?;

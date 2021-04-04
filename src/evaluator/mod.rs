@@ -10,7 +10,7 @@ fn is_error(obj: &Object) -> bool {
     matches!(obj, Object::Error(_))
 }
 
-pub fn eval(node: Node, env: &mut Environment) -> Option<Object> {
+pub fn eval(node: Node, env: Environment) -> Option<Object> {
     match node {
         Node::Program(program) => eval_program(program, env),
         Node::IntLiteral(int_lit) => Some(Integer::new(int_lit.value).into()),
@@ -24,7 +24,7 @@ pub fn eval(node: Node, env: &mut Environment) -> Option<Object> {
             }
         },
         Node::InfixExpr(infix) => {
-            let left = eval(infix.left.into_node(), env)?;
+            let left = eval(infix.left.into_node(), env.clone())?;
             if is_error(&left) {
                 return Some(left);
             }
@@ -47,7 +47,7 @@ pub fn eval(node: Node, env: &mut Environment) -> Option<Object> {
             }
         },
         Node::LetStatement(let_stmt) => {
-            let val = eval(let_stmt.value.into_node(), env)?;
+            let val = eval(let_stmt.value.into_node(), env.clone())?;
             if is_error(&val) {
                 return Some(val);
             }
@@ -55,15 +55,30 @@ pub fn eval(node: Node, env: &mut Environment) -> Option<Object> {
             None
         },
         Node::Identifier(ident) => Some(eval_identifier(ident, env)),
-        _ => None
+        Node::FuncLiteral(func_lit) => {
+            let params = func_lit.parameters;
+            let body = func_lit.body;
+            Some(Function::new(params, body, env.clone()).into())
+        },
+        Node::CallExpr(call) => {
+            let func = eval(call.function.into_node(), env.clone())?;
+            if is_error(&func) {
+                return Some(func);
+            }
+            let args = eval_expressions(call.arguments, env.clone())?;
+            if args.len() == 1 && is_error(&args[0]) {
+                return Some(args[0].clone());
+            }
+            apply_function(func, args)
+        },
     }
 }
 
-fn eval_program(program: Program, env: &mut Environment) -> Option<Object> {
+fn eval_program(program: Program, env: Environment) -> Option<Object> {
     let mut result = None;
 
     for stmt in program.statements.into_iter() {
-        result = eval(stmt.into_node(), env);
+        result = eval(stmt.into_node(), env.clone());
 
         match result {
             Some(Object::ReturnValue(ret_val)) => return Some(ret_val.value),
@@ -75,11 +90,11 @@ fn eval_program(program: Program, env: &mut Environment) -> Option<Object> {
     result
 }
 
-fn eval_statements(block: BlockStatement, env: &mut Environment) -> Option<Object> {
+fn eval_statements(block: BlockStatement, env: Environment) -> Option<Object> {
     let mut result = None;
 
     for stmt in block.statements.into_iter() {
-        result = eval(stmt.into_node(), env);
+        result = eval(stmt.into_node(), env.clone());
 
         if matches!(
             result,
@@ -187,8 +202,8 @@ fn eval_integer_infix_expression(
     }
 }
 
-fn eval_if_expression(if_expr: IfExpression, env: &mut Environment) -> Option<Object> {
-    let condition = eval(if_expr.condition.into_node(), env)?;
+fn eval_if_expression(if_expr: IfExpression, env: Environment) -> Option<Object> {
+    let condition = eval(if_expr.condition.into_node(), env.clone())?;
 
     if is_error(&condition) {
         return Some(condition);
@@ -203,12 +218,55 @@ fn eval_if_expression(if_expr: IfExpression, env: &mut Environment) -> Option<Ob
     }
 }
 
-fn eval_identifier(ident: Identifier, env: &Environment) -> Object {
+fn eval_identifier(ident: Identifier, env: Environment) -> Object {
     let val = env.get(&ident.value);
     if let Some(val) = val {
         val.clone()
     } else {
         Error::new(String::from("identifier not found: ") + &ident.value).into()
+    }
+}
+
+fn eval_expressions(exprs: Vec<Expression>, env: Environment) -> Option<Vec<Object>> {
+    let mut result = Vec::new();
+
+    for expr in exprs.into_iter() {
+        let evaluated = eval(expr.into_node(), env.clone())?;
+        if is_error(&evaluated) {
+            return Some(vec![evaluated]);
+        }
+        result.push(evaluated);
+    }
+
+    Some(result)
+}
+
+fn apply_function(func: Object, args: Vec<Object>) -> Option<Object> {
+    match func {
+        Object::Function(func) => {
+            let extended_env = extend_function_env(*func.clone(), args);
+            let evaluated = eval(func.body.into_node(), extended_env)?;
+            Some(unwrap_return_value(evaluated))
+        },
+        other => Some(Error::new(format!("not a function: {:?}", other.get_type())).into())
+    }
+}
+
+fn extend_function_env(func: Function, args: Vec<Object>) -> Environment {
+    let env = Environment::new_enclosed(func.env.clone());
+
+    for (param_idx, param) in func.parameters.into_iter().enumerate() {
+        env.insert(param.value, args[param_idx].clone());
+    }
+
+    env
+}
+
+fn unwrap_return_value(obj: Object) -> Object {
+    if let Object::ReturnValue(ret_val) = obj {
+        ret_val.value
+    } else {
+        obj
     }
 }
 

@@ -1,3 +1,6 @@
+use crate::ast::*;
+use super::environment::*;
+
 pub const TRUE : Object = Object::Bool(Bool { value: true });
 pub const FALSE: Object = Object::Bool(Bool { value: false});
 pub const NULL : Object = Object::Null(Null {});
@@ -8,6 +11,7 @@ pub enum ObjectType {
     BoolObj,
     NullObj,
     ReturnValueObj,
+    FunctionObj,
     ErrorObj,
 }
 
@@ -18,6 +22,7 @@ impl ObjectType {
             Self::BoolObj => "BOOLEAN",
             Self::NullObj => "NULL",
             Self::ReturnValueObj => "RETURN_VALUE",
+            Self::FunctionObj => "FUNCTION",
             Self::ErrorObj => "ERROR",
         }
     }
@@ -33,6 +38,7 @@ pub enum Object {
     Integer(Integer),
     Bool(Bool),
     ReturnValue(Box<ReturnValue>),
+    Function(Box<Function>),
     Null(Null),
     Error(Error),
 }
@@ -54,6 +60,7 @@ impl ObjectExt for Object {
             Self::Integer(integer) => integer.get_type(),
             Self::Bool(boolean) => boolean.get_type(),
             Self::ReturnValue(ret_val) => ret_val.get_type(),
+            Self::Function(func) => func.get_type(),
             Self::Null(null) => null.get_type(),
             Self::Error(err) => err.get_type(),
         }
@@ -64,6 +71,7 @@ impl ObjectExt for Object {
             Self::Integer(integer) => integer.inspect(),
             Self::Bool(boolean) => boolean.inspect(),
             Self::ReturnValue(ret_val) => ret_val.inspect(),
+            Self::Function(func) => func.inspect(),
             Self::Null(null) => null.inspect(),
             Self::Error(err) => err.inspect(),
         }
@@ -188,5 +196,45 @@ impl ObjectExt for Error {
 impl From<Error> for Object {
     fn from(err: Error) -> Object {
         Object::Error(err)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Function {
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub env: Environment,
+}
+
+impl Function {
+    pub fn new(parameters: Vec<Identifier>, body: BlockStatement, env: Environment) -> Function {
+        Function { parameters, body, env }
+    }
+}
+
+impl ObjectExt for Function {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::FunctionObj
+    }
+
+    fn inspect(&self) -> String {
+        let mut ret = String::from("fn(");
+
+        ret = ret + &self.parameters
+                        .iter()
+                        .map(|param| param.value.as_str())
+                        .collect::<Vec<&str>>()
+                        .as_slice()
+                        .join(", ");
+
+        ret = ret + ") {\n";
+        ret = ret + &self.body.to_string();
+        ret + "\n}"
+    }
+}
+
+impl From<Function> for Object {
+    fn from(func: Function) -> Object {
+        Object::Function(Box::new(func))
     }
 }

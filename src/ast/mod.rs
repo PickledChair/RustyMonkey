@@ -62,7 +62,7 @@ impl NodeExt for Program {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Statement {
     Let(Box<LetStatement>),
     Return(Box<ReturnStatement>),
@@ -95,7 +95,7 @@ impl NodeExt for Statement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
@@ -128,7 +128,7 @@ impl NodeExt for LetStatement {
 
 impl StatementExt for LetStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ReturnStatement {
     pub token: Token,
     pub ret_value: Expression,
@@ -158,7 +158,7 @@ impl NodeExt for ReturnStatement {
 
 impl StatementExt for ReturnStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Expression,
@@ -198,7 +198,7 @@ impl NodeExt for ExpressionStatement {
 
 impl StatementExt for ExpressionStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BlockStatement {
     pub token: Token,
     pub statements: Vec<Statement>,
@@ -234,7 +234,7 @@ impl NodeExt for BlockStatement {
 
 impl StatementExt for BlockStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expression {
     Identifier(Box<Identifier>),
     IntLiteral(Box<IntegerLiteral>),
@@ -287,7 +287,7 @@ impl NodeExt for Expression {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -316,7 +316,7 @@ impl NodeExt for Identifier {
 
 impl ExpressionExt for Identifier {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
@@ -351,7 +351,7 @@ impl NodeExt for IntegerLiteral {
 
 impl ExpressionExt for IntegerLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -386,7 +386,7 @@ impl NodeExt for PrefixExpression {
 
 impl ExpressionExt for PrefixExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct InfixExpression {
     pub token: Token,
     pub left: Expression,
@@ -421,7 +421,7 @@ impl NodeExt for InfixExpression {
 
 impl ExpressionExt for InfixExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Boolean {
     pub token: Token,
     pub value: bool,
@@ -454,7 +454,7 @@ impl NodeExt for Boolean {
 
 impl ExpressionExt for Boolean {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct IfExpression {
     pub token: Token,
     pub condition: Expression,
@@ -502,7 +502,7 @@ impl NodeExt for IfExpression {
 
 impl ExpressionExt for IfExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FunctionLiteral {
     pub token: Token,
     pub parameters: Vec<Identifier>,
@@ -547,7 +547,7 @@ impl NodeExt for FunctionLiteral {
 
 impl ExpressionExt for FunctionLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CallExpression {
     pub token: Token,           // '(' トークン
     pub function: Expression,   // Identifier または FunctionLiteral
