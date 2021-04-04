@@ -13,7 +13,7 @@ pub fn eval(node: Node) -> Object {
         Node::IntLiteral(int_lit) => Integer::new(int_lit.value).into(),
         Node::Boolean(boolean) => boolean.value.into(),
         Node::PrefixExpr(prefix) => {
-            let right = eval(prefix.right.to_node());
+            let right = eval(prefix.right.into_node());
             if is_error(&right) {
                 right
             } else {
@@ -21,11 +21,11 @@ pub fn eval(node: Node) -> Object {
             }
         },
         Node::InfixExpr(infix) => {
-            let left = eval(infix.left.to_node());
+            let left = eval(infix.left.into_node());
             if is_error(&left) {
                 return left;
             }
-            let right = eval(infix.right.to_node());
+            let right = eval(infix.right.into_node());
             if is_error(&right) {
                 return right;
             }
@@ -36,7 +36,7 @@ pub fn eval(node: Node) -> Object {
         Node::BlockStatement(block) => eval_statements(block),
         Node::IfExpr(if_expr) => eval_if_expression(if_expr),
         Node::ReturnStatement(ret_stmt) => {
-            let val = eval(ret_stmt.ret_value.to_node());
+            let val = eval(ret_stmt.ret_value.into_node());
             if is_error(&val) {
                 val
             } else {
@@ -53,7 +53,7 @@ fn eval_program(program: Program) -> Object {
     let mut result = NULL;
 
     for stmt in program.statements.into_iter() {
-        result = eval(stmt.to_node());
+        result = eval(stmt.into_node());
 
         match result {
             Object::ReturnValue(ret_val) => return ret_val.value,
@@ -69,7 +69,7 @@ fn eval_statements(block: BlockStatement) -> Object {
     let mut result = NULL;
 
     for stmt in block.statements.into_iter() {
-        result = eval(stmt.to_node());
+        result = eval(stmt.into_node());
 
         if matches!(
             result.get_type(),
@@ -178,16 +178,16 @@ fn eval_integer_infix_expression(
 }
 
 fn eval_if_expression(if_expr: IfExpression) -> Object {
-    let condition = eval(if_expr.condition.to_node());
+    let condition = eval(if_expr.condition.into_node());
 
     if is_error(&condition) {
         return condition;
     }
 
     if condition.is_truthy() {
-        eval(if_expr.consequence.to_node())
+        eval(if_expr.consequence.into_node())
     } else if if_expr.alternative.is_some() {
-        eval(if_expr.alternative.unwrap().to_node())
+        eval(if_expr.alternative.unwrap().into_node())
     } else {
         NULL
     }

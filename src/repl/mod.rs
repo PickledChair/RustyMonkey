@@ -44,7 +44,7 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
                     continue;
                 }
 
-                let evaluated = eval(program.to_node());
+                let evaluated = eval(program.into_node());
                 out.write_all(evaluated.inspect().as_str().as_bytes())?;
                 out.write_all(b"\n")?;
                 out.flush()?;

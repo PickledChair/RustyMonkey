@@ -37,7 +37,7 @@ fn test_eval(input: &str) -> Object {
     let mut p = Parser::new(l);
     let program = p.parse_program();
 
-    eval(program.to_node())
+    eval(program.into_node())
 }
 
 fn test_integer_object(obj: Object, expected: i64) {
