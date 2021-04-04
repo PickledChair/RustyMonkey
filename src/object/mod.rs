@@ -7,6 +7,7 @@ pub enum ObjectType {
     IntegerObj,
     BoolObj,
     NullObj,
+    ReturnValueObj,
 }
 
 impl ObjectType {
@@ -15,6 +16,7 @@ impl ObjectType {
             Self::IntegerObj => "INTEGER",
             Self::BoolObj => "BOOLEAN",
             Self::NullObj => "NULL",
+            Self::ReturnValueObj => "RETURN_VALUE",
         }
     }
 }
@@ -28,6 +30,7 @@ pub trait ObjectExt {
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
+    ReturnValue(Box<ReturnValue>),
     Null(Null),
 }
 
@@ -47,6 +50,7 @@ impl ObjectExt for Object {
         match self {
             Self::Integer(integer) => integer.get_type(),
             Self::Bool(boolean) => boolean.get_type(),
+            Self::ReturnValue(ret_val) => ret_val.get_type(),
             Self::Null(null) => null.get_type(),
         }
     }
@@ -55,6 +59,7 @@ impl ObjectExt for Object {
         match self {
             Self::Integer(integer) => integer.inspect(),
             Self::Bool(boolean) => boolean.inspect(),
+            Self::ReturnValue(ret_val) => ret_val.inspect(),
             Self::Null(null) => null.inspect(),
         }
     }
@@ -122,7 +127,34 @@ impl ObjectExt for Null {
 }
 
 impl From<Null> for Object {
-    fn from(null: Null) -> Object {
-        Object::Null(null)
+    fn from(_null: Null) -> Object {
+        NULL
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ReturnValue {
+    pub value: Object,
+}
+
+impl ReturnValue {
+    pub fn new(value: Object) -> ReturnValue {
+        ReturnValue { value }
+    }
+}
+
+impl ObjectExt for ReturnValue {
+    fn get_type(&self) -> ObjectType  {
+        ObjectType::ReturnValueObj
+    }
+
+    fn inspect(&self) -> String {
+        self.value.inspect()
+    }
+}
+
+impl From<ReturnValue> for Object {
+    fn from(ret_val: ReturnValue) -> Object {
+        Object::ReturnValue(Box::new(ret_val))
     }
 }

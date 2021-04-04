@@ -5,7 +5,7 @@ use super::{
 
 pub fn eval(node: Node) -> Option<Object> {
     match node {
-        Node::Program(program) => eval_statements(program.statements),
+        Node::Program(program) => eval_program(program),
         Node::IntLiteral(int_lit) => Some(Integer::new(int_lit.value).into()),
         Node::Boolean(boolean) => Some(boolean.value.into()),
         Node::PrefixExpr(prefix) => {
@@ -19,17 +19,43 @@ pub fn eval(node: Node) -> Option<Object> {
                 &infix.operator, left, right
             ))
         },
-        Node::BlockStatement(block) => eval_statements(block.statements),
+        Node::BlockStatement(block) => eval_statements(block),
         Node::IfExpr(if_expr) => eval_if_expression(if_expr),
+        Node::ReturnStatement(ret_stmt) => {
+            let val = eval(ret_stmt.ret_value.to_node())?;
+            Some(ReturnValue::new(val).into())
+        }
         _ => None
     }
 }
 
-fn eval_statements(stmts: Vec<Statement>) -> Option<Object> {
+fn eval_program(program: Program) -> Option<Object> {
     let mut result = None;
 
-    for stmt in stmts.into_iter() {
+    for stmt in program.statements.into_iter() {
         result = eval(stmt.to_node());
+
+        if matches!(result, Some(Object::ReturnValue(_))) {
+            if let Object::ReturnValue(ret_val) = result.clone().unwrap() {
+                return Some(ret_val.value);
+            }
+        }
+    }
+
+    result
+}
+
+fn eval_statements(block: BlockStatement) -> Option<Object> {
+    let mut result = None;
+
+    for stmt in block.statements.into_iter() {
+        result = eval(stmt.to_node());
+
+        if result.is_some() {
+            if result.as_ref().unwrap().get_type() == ObjectType::ReturnValueObj {
+                return result;
+            }
+        }
     }
 
     result
