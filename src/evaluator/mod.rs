@@ -1,63 +1,73 @@
 use super::{
     ast::*,
-    object::*,
+    object::{
+        object::*,
+        environment::*,
+    },
 };
 
 fn is_error(obj: &Object) -> bool {
     matches!(obj, Object::Error(_))
 }
 
-pub fn eval(node: Node) -> Object {
+pub fn eval(node: Node, env: &mut Environment) -> Option<Object> {
     match node {
-        Node::Program(program) => eval_program(program),
-        Node::IntLiteral(int_lit) => Integer::new(int_lit.value).into(),
-        Node::Boolean(boolean) => boolean.value.into(),
+        Node::Program(program) => eval_program(program, env),
+        Node::IntLiteral(int_lit) => Some(Integer::new(int_lit.value).into()),
+        Node::Boolean(boolean) => Some(boolean.value.into()),
         Node::PrefixExpr(prefix) => {
-            let right = eval(prefix.right.into_node());
+            let right = eval(prefix.right.into_node(), env)?;
             if is_error(&right) {
-                right
+                Some(right)
             } else {
-                eval_prefix_expression(&prefix.operator, right)
+                Some(eval_prefix_expression(&prefix.operator, right))
             }
         },
         Node::InfixExpr(infix) => {
-            let left = eval(infix.left.into_node());
+            let left = eval(infix.left.into_node(), env)?;
             if is_error(&left) {
-                return left;
+                return Some(left);
             }
-            let right = eval(infix.right.into_node());
+            let right = eval(infix.right.into_node(), env)?;
             if is_error(&right) {
-                return right;
+                return Some(right);
             }
-            eval_infix_expression(
+            Some(eval_infix_expression(
                 &infix.operator, left, right
-            )
+            ))
         },
-        Node::BlockStatement(block) => eval_statements(block),
-        Node::IfExpr(if_expr) => eval_if_expression(if_expr),
+        Node::BlockStatement(block) => eval_statements(block, env),
+        Node::IfExpr(if_expr) => eval_if_expression(if_expr, env),
         Node::ReturnStatement(ret_stmt) => {
-            let val = eval(ret_stmt.ret_value.into_node());
+            let val = eval(ret_stmt.ret_value.into_node(), env)?;
             if is_error(&val) {
-                val
+                Some(val)
             } else {
-                ReturnValue::new(val).into()
+                Some(ReturnValue::new(val).into())
             }
-        }
-        other => Error::new(
-            format!("could not eval AST node: {:?}", other)
-        ).into()
+        },
+        Node::LetStatement(let_stmt) => {
+            let val = eval(let_stmt.value.into_node(), env)?;
+            if is_error(&val) {
+                return Some(val);
+            }
+            env.insert(let_stmt.name.value, val);
+            None
+        },
+        Node::Identifier(ident) => Some(eval_identifier(ident, env)),
+        _ => None
     }
 }
 
-fn eval_program(program: Program) -> Object {
-    let mut result = NULL;
+fn eval_program(program: Program, env: &mut Environment) -> Option<Object> {
+    let mut result = None;
 
     for stmt in program.statements.into_iter() {
-        result = eval(stmt.into_node());
+        result = eval(stmt.into_node(), env);
 
         match result {
-            Object::ReturnValue(ret_val) => return ret_val.value,
-            Object::Error(_) => return result,
+            Some(Object::ReturnValue(ret_val)) => return Some(ret_val.value),
+            Some(Object::Error(_)) => return result,
             _ => ()
         }
     }
@@ -65,15 +75,15 @@ fn eval_program(program: Program) -> Object {
     result
 }
 
-fn eval_statements(block: BlockStatement) -> Object {
-    let mut result = NULL;
+fn eval_statements(block: BlockStatement, env: &mut Environment) -> Option<Object> {
+    let mut result = None;
 
     for stmt in block.statements.into_iter() {
-        result = eval(stmt.into_node());
+        result = eval(stmt.into_node(), env);
 
         if matches!(
-            result.get_type(),
-            ObjectType::ReturnValueObj | ObjectType::ErrorObj
+            result,
+            Some(Object::ReturnValue(_)) | Some(Object::Error(_))
         ) {
             return result;
         }
@@ -177,19 +187,28 @@ fn eval_integer_infix_expression(
     }
 }
 
-fn eval_if_expression(if_expr: IfExpression) -> Object {
-    let condition = eval(if_expr.condition.into_node());
+fn eval_if_expression(if_expr: IfExpression, env: &mut Environment) -> Option<Object> {
+    let condition = eval(if_expr.condition.into_node(), env)?;
 
     if is_error(&condition) {
-        return condition;
+        return Some(condition);
     }
 
     if condition.is_truthy() {
-        eval(if_expr.consequence.into_node())
+        eval(if_expr.consequence.into_node(), env)
     } else if if_expr.alternative.is_some() {
-        eval(if_expr.alternative.unwrap().into_node())
+        eval(if_expr.alternative.unwrap().into_node(), env)
     } else {
-        NULL
+        Some(NULL)
+    }
+}
+
+fn eval_identifier(ident: Identifier, env: &Environment) -> Object {
+    let val = env.get(&ident.value);
+    if let Some(val) = val {
+        val.clone()
+    } else {
+        Error::new(String::from("identifier not found: ") + &ident.value).into()
     }
 }
 

@@ -2,7 +2,10 @@ use super::{
     lexer::*,
     ast::*,
     parser::*,
-    object::*,
+    object::{
+        object::*,
+        environment::*,
+    },
     evaluator::*,
 };
 
@@ -24,14 +27,15 @@ const MONKEY_FACE: &'static [u8] = br#"            __,__
 "#;
 
 pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
-    'monkey_repl: loop {
+    let mut env = Environment::new();
+    loop {
         out.write_all(PROMPT)?;
         out.flush()?;
         let mut line = String::new();
         in_.read_line(&mut line)?;
 
         if line.trim_end() == "quit()" || line.trim_end() == "exit()" {
-            break 'monkey_repl;
+            break;
         }
 
         match Lexer::new(&line) {
@@ -44,10 +48,12 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
                     continue;
                 }
 
-                let evaluated = eval(program.into_node());
-                out.write_all(evaluated.inspect().as_str().as_bytes())?;
-                out.write_all(b"\n")?;
-                out.flush()?;
+                let evaluated = eval(program.into_node(), &mut env);
+                if let Some(evaluated) = evaluated {
+                    out.write_all(evaluated.inspect().as_str().as_bytes())?;
+                    out.write_all(b"\n")?;
+                    out.flush()?;
+                }
             },
             Err(msg) => {
                 out.write_all(&mut msg.as_bytes())?;

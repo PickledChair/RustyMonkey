@@ -1,6 +1,9 @@
 use crate::{
     lexer::*,
-    object::*,
+    object::{
+        object::*,
+        environment::*,
+    },
     parser::*,
     ast::*,
 };
@@ -36,8 +39,11 @@ fn test_eval(input: &str) -> Object {
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
     let program = p.parse_program();
+    let mut env = Environment::new();
 
-    eval(program.into_node())
+    let evaluated = eval(program.into_node(), &mut env);
+    assert!(evaluated.is_some(), "eval(program) is not Some(Object).");
+    evaluated.unwrap()
 }
 
 fn test_integer_object(obj: Object, expected: i64) {
@@ -214,6 +220,10 @@ if (10 > 1) {
             ",
             "unknown operator: BOOLEAN + BOOLEAN"
         ),
+        (
+            "foobar",
+            "identifier not found: foobar"
+        ),
     ];
 
     for (input, expected) in &tests {
@@ -234,5 +244,19 @@ if (10 > 1) {
                 )
             }
         }
+    }
+}
+
+#[test]
+fn test_let_statements() {
+    let tests = [
+        ("let a = 5; a;", 5),
+        ("let a = 5 * 5; a;", 25),
+        ("let a = 5; let b = a; b;", 5),
+        ("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+    ];
+
+    for (input, expected) in &tests {
+        test_integer_object(test_eval(input), *expected);
     }
 }
