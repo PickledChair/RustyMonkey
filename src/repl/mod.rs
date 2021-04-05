@@ -34,7 +34,7 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
         let mut line = String::new();
         in_.read_line(&mut line)?;
 
-        if line.trim_end() == "quit()" || line.trim_end() == "exit()" {
+        if line.contains("quit") || line.contains("exit") {
             break;
         }
 
