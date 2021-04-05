@@ -52,6 +52,10 @@ impl Object {
             _ => true,
         }
     }
+
+    pub fn is_error(&self) -> bool {
+        matches!(self, Object::Error(_))
+    }
 }
 
 impl ObjectExt for Object {

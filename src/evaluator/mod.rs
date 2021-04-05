@@ -6,10 +6,6 @@ use super::{
     },
 };
 
-fn is_error(obj: &Object) -> bool {
-    matches!(obj, Object::Error(_))
-}
-
 pub fn eval(node: Node, env: Environment) -> Option<Object> {
     match node {
         Node::Program(program) => eval_program(program, env),
@@ -17,7 +13,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
         Node::Boolean(boolean) => Some(boolean.value.into()),
         Node::PrefixExpr(prefix) => {
             let right = eval(prefix.right.into_node(), env)?;
-            if is_error(&right) {
+            if right.is_error() {
                 Some(right)
             } else {
                 Some(eval_prefix_expression(&prefix.operator, right))
@@ -25,11 +21,11 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
         },
         Node::InfixExpr(infix) => {
             let left = eval(infix.left.into_node(), env.clone())?;
-            if is_error(&left) {
+            if left.is_error() {
                 return Some(left);
             }
             let right = eval(infix.right.into_node(), env)?;
-            if is_error(&right) {
+            if right.is_error() {
                 return Some(right);
             }
             Some(eval_infix_expression(
@@ -40,7 +36,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
         Node::IfExpr(if_expr) => eval_if_expression(if_expr, env),
         Node::ReturnStatement(ret_stmt) => {
             let val = eval(ret_stmt.ret_value.into_node(), env)?;
-            if is_error(&val) {
+            if val.is_error() {
                 Some(val)
             } else {
                 Some(ReturnValue::new(val).into())
@@ -48,7 +44,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
         },
         Node::LetStatement(let_stmt) => {
             let val = eval(let_stmt.value.into_node(), env.clone())?;
-            if is_error(&val) {
+            if val.is_error() {
                 return Some(val);
             }
             env.insert(let_stmt.name.value, val);
@@ -62,11 +58,11 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
         },
         Node::CallExpr(call) => {
             let func = eval(call.function.into_node(), env.clone())?;
-            if is_error(&func) {
+            if func.is_error() {
                 return Some(func);
             }
             let args = eval_expressions(call.arguments, env.clone())?;
-            if args.len() == 1 && is_error(&args[0]) {
+            if args.len() == 1 && args[0].is_error() {
                 return Some(args[0].clone());
             }
             apply_function(func, args)
@@ -205,7 +201,7 @@ fn eval_integer_infix_expression(
 fn eval_if_expression(if_expr: IfExpression, env: Environment) -> Option<Object> {
     let condition = eval(if_expr.condition.into_node(), env.clone())?;
 
-    if is_error(&condition) {
+    if condition.is_error() {
         return Some(condition);
     }
 
@@ -232,7 +228,7 @@ fn eval_expressions(exprs: Vec<Expression>, env: Environment) -> Option<Vec<Obje
 
     for expr in exprs.into_iter() {
         let evaluated = eval(expr.into_node(), env.clone())?;
-        if is_error(&evaluated) {
+        if evaluated.is_error() {
             return Some(vec![evaluated]);
         }
         result.push(evaluated);
