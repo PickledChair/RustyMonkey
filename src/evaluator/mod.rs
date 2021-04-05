@@ -123,15 +123,10 @@ fn eval_bang_operator_expression(right: Object) -> Object {
 }
 
 fn eval_minus_prefix_operator_expression(right: Object) -> Object {
-    if right.get_type() != ObjectType::IntegerObj {
-        Error::new(format!("unknown operator: -{}", right.get_type().as_str())).into()
+    if let Object::Integer(integer) = right {
+        Object::Integer(Integer::new(-integer.value))
     } else {
-        let value = if let Object::Integer(integer) = right {
-            integer.value
-        } else {
-            unreachable!()
-        };
-        Object::Integer(Integer::new(-value))
+        Error::new(format!("unknown operator: -{}", right.get_type().as_str())).into()
     }
 }
 
