@@ -372,3 +372,50 @@ fn test_string_concatenation() {
         }
     }
 }
+
+#[allow(dead_code)]
+enum Expected {
+    // Int(i32),
+    Int64(i64),
+    Str(String),
+    Bool(bool),
+}
+
+#[test]
+fn test_builtin_functions() {
+    let tests = [
+        (r#"len("")"#, Expected::Int64(0)),
+        (r#"len("four")"#, Expected::Int64(4)),
+        (r#"len("hello world")"#, Expected::Int64(11)),
+        ("len(1)", Expected::Str("argument to `len` not supported, got INTEGER".to_string())),
+        (r#"len("one", "two")"#, Expected::Str("wrong number of arguments. got=2, want=1".to_string())),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+
+        match expected {
+            Expected::Int64(expected_num) => {
+                test_integer_object(evaluated, *expected_num);
+            },
+            Expected::Str(expected_str) => {
+                match evaluated {
+                    Object::Error(err) => {
+                        assert_eq!(
+                            err.message, *expected_str,
+                            "wrong error message. expected={}, got={}",
+                            expected_str, err.message
+                        );
+                    },
+                    other => {
+                        panic!(
+                            "object is not Error. got={:?}",
+                            other
+                        );
+                    }
+                }
+            },
+            _ => unreachable!()
+        }
+    }
+}

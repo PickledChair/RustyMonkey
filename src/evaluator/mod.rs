@@ -3,6 +3,7 @@ use super::{
     object::{
         object::*,
         environment::*,
+        builtin_functions::*,
     },
 };
 
@@ -241,7 +242,11 @@ fn eval_identifier(ident: Identifier, env: Environment) -> Object {
     if let Some(val) = val {
         val.clone()
     } else {
-        Error::new(String::from("identifier not found: ") + &ident.value).into()
+        if let Some(builtin) = search_builtins(&ident.value) {
+            builtin
+        } else {
+            Error::new(String::from("identifier not found: ") + &ident.value).into()
+        }
     }
 }
 
@@ -265,6 +270,10 @@ fn apply_function(func: Object, args: Vec<Object>) -> Option<Object> {
             let extended_env = extend_function_env(*func.clone(), args);
             let evaluated = eval(func.body.into_node(), extended_env)?;
             Some(unwrap_return_value(evaluated))
+        },
+        Object::Builtin(builtin) => {
+            let builtin_func = builtin.func.f_ptr;
+            Some(builtin_func(args))
         },
         other => Some(Error::new(format!("not a function: {:?}", other.get_type())).into())
     }

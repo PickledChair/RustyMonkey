@@ -13,6 +13,7 @@ pub enum ObjectType {
     NullObj,
     ReturnValueObj,
     FunctionObj,
+    BuiltinObj,
     ErrorObj,
 }
 
@@ -25,6 +26,7 @@ impl ObjectType {
             Self::NullObj => "NULL",
             Self::ReturnValueObj => "RETURN_VALUE",
             Self::FunctionObj => "FUNCTION",
+            Self::BuiltinObj => "BUILTIN",
             Self::ErrorObj => "ERROR",
         }
     }
@@ -42,6 +44,7 @@ pub enum Object {
     Str(MonkeyStr),
     ReturnValue(Box<ReturnValue>),
     Function(Box<Function>),
+    Builtin(Builtin),
     Null(Null),
     Error(Error),
 }
@@ -69,6 +72,7 @@ impl ObjectExt for Object {
             Self::Str(monk_str) => monk_str.get_type(),
             Self::ReturnValue(ret_val) => ret_val.get_type(),
             Self::Function(func) => func.get_type(),
+            Self::Builtin(builtin) => builtin.get_type(),
             Self::Null(null) => null.get_type(),
             Self::Error(err) => err.get_type(),
         }
@@ -81,6 +85,7 @@ impl ObjectExt for Object {
             Self::Str(monk_str) => monk_str.inspect(),
             Self::ReturnValue(ret_val) => ret_val.inspect(),
             Self::Function(func) => func.inspect(),
+            Self::Builtin(builtin) => builtin.inspect(),
             Self::Null(null) => null.inspect(),
             Self::Error(err) => err.inspect(),
         }
@@ -272,5 +277,46 @@ impl ObjectExt for MonkeyStr {
 impl From<MonkeyStr> for Object {
     fn from(monk_str: MonkeyStr) -> Object {
         Object::Str(monk_str)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct BuiltinFunction {
+    pub name: &'static str,
+    pub f_ptr: fn(Vec<Object>) -> Object
+}
+
+impl BuiltinFunction {
+    pub fn new(name: &'static str, f_ptr: fn(Vec<Object>) -> Object) -> BuiltinFunction {
+        BuiltinFunction { name, f_ptr }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Builtin {
+    pub func: BuiltinFunction,
+}
+
+impl Builtin {
+    pub fn new(func: BuiltinFunction) -> Builtin {
+        Builtin { func }
+    }
+}
+
+impl ObjectExt for Builtin {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::BuiltinObj
+    }
+
+    fn inspect(&self) -> String {
+        String::from("builtin function (")
+            + self.func.name
+            + ")"
+    }
+}
+
+impl From<Builtin> for Object {
+    fn from(builtin: Builtin) -> Object {
+        Object::Builtin(builtin)
     }
 }
