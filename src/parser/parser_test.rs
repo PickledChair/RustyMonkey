@@ -7,6 +7,8 @@ fn test_let_statements() {
         ("let x = 5;", Expected::Str("x".to_string()), Expected::Int64(5)),
         ("let y = true;", Expected::Str("y".to_string()), Expected::Bool(true)),
         ("let foobar = y;", Expected::Str("foobar".to_string()), Expected::Str("y".to_string())),
+        ("let foo_bar = y;", Expected::Str("foo_bar".to_string()), Expected::Str("y".to_string())),
+        ("let v512 = 512;", Expected::Str("v512".to_string()), Expected::Int64(512)),
     ];
 
     for (input, expected_ident, expected_value) in &tests {

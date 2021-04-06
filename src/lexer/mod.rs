@@ -49,8 +49,10 @@ impl<'a> Lexer<'a> {
 
     fn read_identifier(&mut self) -> &str {
         let pos = self.pos;
-        while Lexer::is_letter(self.ch) {
+        let mut is_first = true;
+        while Lexer::is_letter(self.ch) || (!is_first && Lexer::is_digit(self.ch)) {
             self.read_char();
+            is_first = false;
         }
         &self.input[pos..self.pos]
     }
