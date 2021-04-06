@@ -389,6 +389,13 @@ fn test_builtin_functions() {
         (r#"len("hello world")"#, Expected::Int64(11)),
         ("len(1)", Expected::Str("argument to `len` not supported, got INTEGER".to_string())),
         (r#"len("one", "two")"#, Expected::Str("wrong number of arguments. got=2, want=1".to_string())),
+        ("str(42)", Expected::Str("42".to_string())),
+        (r#"str("hello world")"#, Expected::Str("hello world".to_string())),
+        (r#"int("42")"#, Expected::Int64(42)),
+        (r#"int(42)"#, Expected::Int64(42)),
+        (r#"int("hello42")"#, Expected::Str("could not convert the given STRING `hello42` into INTEGER".to_string())),
+        ("int(str(40)) + int(str(2))", Expected::Int64(42)),
+        ("str(int(40)) + str(int(2))", Expected::Str("402".to_string())),
     ];
 
     for (input, expected) in &tests {
@@ -407,6 +414,13 @@ fn test_builtin_functions() {
                             expected_str, err.message
                         );
                     },
+                    Object::Str(monk_str) => {
+                        assert_eq!(
+                            monk_str.value, *expected_str,
+                            "wrong string value. expected={}, got={}",
+                            expected_str, monk_str.value
+                        );
+                    }
                     other => {
                         panic!(
                             "object is not Error. got={:?}",
