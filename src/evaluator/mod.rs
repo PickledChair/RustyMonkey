@@ -142,6 +142,11 @@ fn eval_infix_expression(
                 operator, left_int, right_int
             )
         },
+        (Object::Str(left_str), Object::Str(right_str)) => {
+            eval_string_infix_expression(
+                operator, left_str, right_str
+            )
+        }
         (left, right) => {
             if operator == "==" {
                 (left == right).into()
@@ -183,6 +188,27 @@ fn eval_integer_infix_expression(
         "/" => Integer::new(left_val / right_val).into(),
         "<" => (left_val < right_val).into(),
         ">" => (left_val > right_val).into(),
+        "==" => (left_val == right_val).into(),
+        "!=" => (left_val != right_val).into(),
+        _ => Error::new(format!(
+            "unknown operator: {} {} {}",
+            left.get_type().as_str(),
+            operator,
+            right.get_type().as_str()
+        )).into()
+    }
+}
+
+fn eval_string_infix_expression(
+    operator: &str,
+    left: MonkeyStr,
+    right: MonkeyStr
+) -> Object {
+    let left_val = &left.value;
+    let right_val = &right.value;
+
+    match operator {
+        "+" => MonkeyStr::new(left_val.to_string() + right_val).into(),
         "==" => (left_val == right_val).into(),
         "!=" => (left_val != right_val).into(),
         _ => Error::new(format!(

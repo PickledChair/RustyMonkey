@@ -224,6 +224,10 @@ if (10 > 1) {
             "foobar",
             "identifier not found: foobar"
         ),
+        (
+            r#""Hello" - "World""#,
+            "unknown operator: STRING - STRING"
+        ),
     ];
 
     for (input, expected) in &tests {
@@ -328,6 +332,28 @@ addTwo(2);
 #[test]
 fn test_string_literal() {
     let input = "\"Hello World!\"";
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        Object::Str(monk_str) => {
+            assert_eq!(
+                monk_str.value, "Hello World!",
+                "String has wrong value. got={}",
+                monk_str.value
+            );
+        },
+        other => {
+            panic!(
+                "object is not String. got={:?}",
+                other
+            );
+        }
+    }
+}
+
+#[test]
+fn test_string_concatenation() {
+    let input = r#""Hello" + " " + "World!""#;
 
     let evaluated = test_eval(input);
     match evaluated {
