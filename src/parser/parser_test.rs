@@ -892,3 +892,41 @@ fn test_call_expression_parsing() {
         }
     }
 }
+
+#[test]
+fn test_string_literal_expression() {
+    let input = "\"hello world\";";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::StrLiteral(str_lit) => {
+                    assert_eq!(
+                        str_lit.value, "hello world",
+                        "str_lit.value not {}. got={}",
+                        "hello world", str_lit.value
+                    );
+                },
+                other => {
+                    panic!(
+                        "expr not Expression::StrLiteral(_). got={:?}",
+                        other
+                    );
+                }
+            }
+        },
+        other => {
+            panic!(
+                "stmt not Statment::ExprStmt(_). got={:?}",
+                other
+            );
+        }
+    }
+}

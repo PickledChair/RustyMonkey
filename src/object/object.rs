@@ -9,6 +9,7 @@ pub const NULL : Object = Object::Null(Null {});
 pub enum ObjectType {
     IntegerObj,
     BoolObj,
+    StringObj,
     NullObj,
     ReturnValueObj,
     FunctionObj,
@@ -20,6 +21,7 @@ impl ObjectType {
         match self {
             Self::IntegerObj => "INTEGER",
             Self::BoolObj => "BOOLEAN",
+            Self::StringObj => "STRING",
             Self::NullObj => "NULL",
             Self::ReturnValueObj => "RETURN_VALUE",
             Self::FunctionObj => "FUNCTION",
@@ -37,6 +39,7 @@ pub trait ObjectExt {
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
+    Str(MonkeyStr),
     ReturnValue(Box<ReturnValue>),
     Function(Box<Function>),
     Null(Null),
@@ -63,6 +66,7 @@ impl ObjectExt for Object {
         match self {
             Self::Integer(integer) => integer.get_type(),
             Self::Bool(boolean) => boolean.get_type(),
+            Self::Str(monk_str) => monk_str.get_type(),
             Self::ReturnValue(ret_val) => ret_val.get_type(),
             Self::Function(func) => func.get_type(),
             Self::Null(null) => null.get_type(),
@@ -74,6 +78,7 @@ impl ObjectExt for Object {
         match self {
             Self::Integer(integer) => integer.inspect(),
             Self::Bool(boolean) => boolean.inspect(),
+            Self::Str(monk_str) => monk_str.inspect(),
             Self::ReturnValue(ret_val) => ret_val.inspect(),
             Self::Function(func) => func.inspect(),
             Self::Null(null) => null.inspect(),
@@ -240,5 +245,32 @@ impl ObjectExt for Function {
 impl From<Function> for Object {
     fn from(func: Function) -> Object {
         Object::Function(Box::new(func))
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct MonkeyStr {
+    pub value: String,
+}
+
+impl MonkeyStr {
+    pub fn new(value: String) -> MonkeyStr {
+        MonkeyStr { value }
+    }
+}
+
+impl ObjectExt for MonkeyStr {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::StringObj
+    }
+
+    fn inspect(&self) -> String {
+        self.value.clone()
+    }
+}
+
+impl From<MonkeyStr> for Object {
+    fn from(monk_str: MonkeyStr) -> Object {
+        Object::Str(monk_str)
     }
 }

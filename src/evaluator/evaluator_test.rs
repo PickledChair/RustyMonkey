@@ -324,3 +324,25 @@ addTwo(2);
 ";
     test_integer_object(test_eval(input), 4);
 }
+
+#[test]
+fn test_string_literal() {
+    let input = "\"Hello World!\"";
+
+    let evaluated = test_eval(input);
+    match evaluated {
+        Object::Str(monk_str) => {
+            assert_eq!(
+                monk_str.value, "Hello World!",
+                "String has wrong value. got={}",
+                monk_str.value
+            );
+        },
+        other => {
+            panic!(
+                "object is not String. got={:?}",
+                other
+            );
+        }
+    }
+}

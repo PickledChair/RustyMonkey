@@ -69,6 +69,35 @@ impl<'a> Lexer<'a> {
         &self.input[pos..self.pos]
     }
 
+    fn read_string(&mut self) -> Option<String> {
+        let mut result = String::new();
+        loop {
+            self.read_char();
+            if self.ch == '"' {
+                break;
+            } else if self.ch == '\0' {
+                return None;
+            } else if self.ch == '\\' {
+                self.read_char();
+                result.push(Lexer::read_escape_char(self.ch));
+            } else {
+                result.push(self.ch);
+            }
+        }
+        self.read_char();
+        Some(result)
+    }
+
+    fn read_escape_char(ch: char) -> char {
+        match ch {
+            't' => '\t',
+            'n' => '\n',
+            'r' => '\r',
+            '"' => '\"',
+            _ => ch
+        }
+    }
+
     fn skip_whitespace(&mut self) {
         while self.ch == ' ' || self.ch == '\t' || self.ch == '\n' || self.ch == '\r' {
             self.read_char();
@@ -146,6 +175,14 @@ impl<'a> Lexer<'a> {
             '}' => {
                 self.read_char();
                 Token::new(TokenKind::Rbrace, None)
+            },
+            '"' => {
+                let literal = self.read_string();
+                if let Some(literal) = literal {
+                    Token::new(TokenKind::Str, Some(literal))
+                } else {
+                    Token::new(TokenKind::Illegal, None)
+                }
             },
             '\0' => Token::new(TokenKind::Eof, None),
             _ => {

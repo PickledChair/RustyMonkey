@@ -8,6 +8,7 @@ pub enum TokenKind {
     // 識別子 + リテラル
     Ident,          // add, foobar, x, y, ...
     Int,            // 134356
+    Str,            // "foo"
 
     // 演算子
     Assign,         // =
@@ -49,6 +50,7 @@ impl TokenKind {
             Self::Eof => "EOF",
             Self::Ident => "IDENT",
             Self::Int => "INT",
+            Self::Str => "STRING",
             Self::Assign => "=",
             Self::Plus => "+",
             Self::Minus => "-",
@@ -104,6 +106,8 @@ impl Token {
             TokenKind::Ident => self.literal.clone()
                 .map_or("".to_string(), |l| l),
             TokenKind::Int => self.literal.clone()
+                .map_or("".to_string(), |l| l),
+            TokenKind::Str => self.literal.clone()
                 .map_or("".to_string(), |l| l),
             other => other.as_str().to_string()
         }

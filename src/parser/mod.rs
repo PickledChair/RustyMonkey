@@ -174,6 +174,7 @@ impl<'a> Parser<'a> {
             Ident => self.parse_identifier(),
             Int => self.parse_integer_literal()?,
             True | False => self.parse_boolean()?,
+            Str => self.parse_string_literal(),
             Bang | Minus => self.parse_prefix_expression()?,
             Lparen => self.parse_grouped_expression()?,
             If => self.parse_if_expression()?,
@@ -221,6 +222,10 @@ impl<'a> Parser<'a> {
 
     fn parse_boolean(&self) -> Result<Expression, String> {
         Ok(Expression::Boolean(Box::new(Boolean::new(self.cur_token.clone())?)))
+    }
+
+    fn parse_string_literal(&self) -> Expression {
+        Expression::StrLiteral(Box::new(StringLiteral::new(self.cur_token.clone())))
     }
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, String> {

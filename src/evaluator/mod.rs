@@ -67,6 +67,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             }
             apply_function(func, args)
         },
+        Node::StrLiteral(str_lit) => Some(MonkeyStr::new(str_lit.value).into())
     }
 }
 

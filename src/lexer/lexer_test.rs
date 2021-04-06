@@ -3,7 +3,7 @@ use super::Lexer;
 
 #[test]
 fn test_next_token() {
-    let input = "let five = 5;
+    let input = r#"let five = 5;
 let ten = 10;
 
 let add = fn(x, y) {
@@ -22,7 +22,13 @@ return false;
 
 10 == 10;
 10 != 9;
-";
+foo_bar123;
+"foobar"
+"foo bar"
+"hello \"world\""
+"hello\n world"
+"hello\t\t\tworld"
+"#;
 
     let test_pairs = [
         (Let, "let"),
@@ -98,6 +104,13 @@ return false;
         (NotEq, "!="),
         (Int, "9"),
         (Semicolon, ";"),
+        (Ident, "foo_bar123"),
+        (Semicolon, ";"),
+        (Str, "foobar"),
+        (Str, "foo bar"),
+        (Str, "hello \"world\""),
+        (Str, "hello\n world"),
+        (Str, "hello\t\t\tworld"),
         (Eof, ""),
     ];
 

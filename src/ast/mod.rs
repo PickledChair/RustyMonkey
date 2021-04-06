@@ -14,6 +14,7 @@ pub enum Node {
     IfExpr(IfExpression),
     FuncLiteral(FunctionLiteral),
     CallExpr(CallExpression),
+    StrLiteral(StringLiteral),
 }
 
 pub trait NodeExt {
@@ -192,6 +193,7 @@ impl NodeExt for ExpressionStatement {
             Expression::InfixExpr(infix) => infix.into_node(),
             Expression::IntLiteral(int_lit) => int_lit.into_node(),
             Expression::PrefixExpr(prefix) => prefix.into_node(),
+            Expression::StrLiteral(str_lit) => str_lit.into_node(),
         }
     }
 }
@@ -244,6 +246,7 @@ pub enum Expression {
     IfExpr(Box<IfExpression>),
     FuncLiteral(Box<FunctionLiteral>),
     CallExpr(Box<CallExpression>),
+    StrLiteral(Box<StringLiteral>),
 }
 
 impl NodeExt for Expression {
@@ -257,6 +260,7 @@ impl NodeExt for Expression {
             Expression::IfExpr(if_expr) => if_expr.token_literal(),
             Expression::FuncLiteral(func_lit) => func_lit.token_literal(),
             Expression::CallExpr(call_expr) => call_expr.token_literal(),
+            Expression::StrLiteral(str_lit) => str_lit.token_literal(),
         }
     }
 
@@ -270,6 +274,7 @@ impl NodeExt for Expression {
             Expression::IfExpr(if_expr) => if_expr.to_string(),
             Expression::FuncLiteral(func_lit) => func_lit.to_string(),
             Expression::CallExpr(call_expr) => call_expr.to_string(),
+            Expression::StrLiteral(str_lit) => str_lit.to_string(),
         }
     }
 
@@ -283,6 +288,7 @@ impl NodeExt for Expression {
             Expression::IfExpr(if_expr) => if_expr.into_node(),
             Expression::FuncLiteral(func_lit) => func_lit.into_node(),
             Expression::CallExpr(call_expr) => call_expr.into_node(),
+            Expression::StrLiteral(str_lit) => str_lit.into_node(),
         }
     }
 }
@@ -589,6 +595,37 @@ impl NodeExt for CallExpression {
 }
 
 impl ExpressionExt for CallExpression {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct StringLiteral {
+    pub token: Token,
+    pub value: String,
+}
+
+impl StringLiteral {
+    pub fn new(token: Token) -> StringLiteral {
+        let value = token.get_literal();
+        StringLiteral {
+            token, value
+        }
+    }
+}
+
+impl NodeExt for StringLiteral {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn into_node(self) -> Node {
+        Node::StrLiteral(self)
+    }
+}
+
+impl ExpressionExt for StringLiteral {}
 
 #[cfg(test)]
 mod ast_test;
