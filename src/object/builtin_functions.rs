@@ -5,6 +5,11 @@ pub fn search_builtins(name: &str) -> Option<Object> {
         "len" => Some(Builtin::new(BuiltinFunction::new("len", builtin_len)).into()),
         "str" => Some(Builtin::new(BuiltinFunction::new("str", builtin_str)).into()),
         "int" => Some(Builtin::new(BuiltinFunction::new("int", builtin_int)).into()),
+        "head" => Some(Builtin::new(BuiltinFunction::new("head", builtin_head)).into()),
+        "last" => Some(Builtin::new(BuiltinFunction::new("last", builtin_last)).into()),
+        "tail" => Some(Builtin::new(BuiltinFunction::new("tail", builtin_tail)).into()),
+        "init" => Some(Builtin::new(BuiltinFunction::new("init", builtin_init)).into()),
+        "push" => Some(Builtin::new(BuiltinFunction::new("push", builtin_push)).into()),
         _ => None
     }
 }
@@ -76,5 +81,152 @@ pub fn builtin_int(args: Vec<Object>) -> Object {
             "argument to `int` not supported, got {}",
             other.get_type().as_str()
         )).into()
+    }
+}
+
+pub fn builtin_head(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+
+    match args[0].clone() {
+        Object::Array(array) => {
+            if array.elements.len() > 0 {
+                array.elements[0].clone()
+            } else {
+                NULL
+            }
+        },
+        Object::Str(monk_str) => {
+            if monk_str.value.len() > 0 {
+                let ch = monk_str.value.chars().next().unwrap();
+                MonkeyStr::new(ch.to_string()).into()
+            } else {
+                NULL
+            }
+        }
+        other => {
+            Error::new(format!(
+                "argument to `head` must be ARRAY or STRING, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+pub fn builtin_last(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+
+    match args[0].clone() {
+        Object::Array(array) => {
+            let length = array.elements.len();
+            if length > 0 {
+                array.elements[length-1].clone()
+            } else {
+                NULL
+            }
+        },
+        Object::Str(monk_str) => {
+            if monk_str.value.len() > 0 {
+                let ch = monk_str.value.chars().last().unwrap();
+                MonkeyStr::new(ch.to_string()).into()
+            } else {
+                NULL
+            }
+        }
+        other => {
+            Error::new(format!(
+                "argument to `last` must be ARRAY or STRING, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+pub fn builtin_tail(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+
+    match args[0].clone() {
+        Object::Array(array) => {
+            let length = array.elements.len();
+            if length > 0 {
+                let elements = array.elements.clone()[1..length].to_vec();
+                Array::new(elements).into()
+            } else {
+                NULL
+            }
+        },
+        Object::Str(monk_str) => {
+            if monk_str.value.len() > 0 {
+                let mut chars = monk_str.value.chars();
+                chars.next();
+                let tail_str = chars.as_str();
+                MonkeyStr::new(tail_str.to_string()).into()
+            } else {
+                NULL
+            }
+        },
+        other => {
+            Error::new(format!(
+                "argument to `tail` must be ARRAY or STRING, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+pub fn builtin_init(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+
+    match args[0].clone() {
+        Object::Array(array) => {
+            let length = array.elements.len();
+            if length > 0 {
+                let elements = array.elements.clone()[0..length-1].to_vec();
+                Array::new(elements).into()
+            } else {
+                NULL
+            }
+        },
+        Object::Str(monk_str) => {
+            if monk_str.value.len() > 0 {
+                let mut string = monk_str.value;
+                string.pop();
+                MonkeyStr::new(string).into()
+            } else {
+                NULL
+            }
+        },
+        other => {
+            Error::new(format!(
+                "argument to `init` must be ARRAY or STRING, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+pub fn builtin_push(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 2) {
+        return err;
+    }
+    match args[0].clone() {
+        Object::Array(array) => {
+            let mut new_elements = array.elements.clone();
+            new_elements.push(args[1].clone());
+            Array::new(new_elements).into()
+        },
+        other => {
+            Error::new(format!(
+                "argument to `push` must be ARRAY, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
     }
 }

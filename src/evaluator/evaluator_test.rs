@@ -334,10 +334,14 @@ fn test_string_literal() {
     let input = "\"Hello World!\"";
 
     let evaluated = test_eval(input);
-    match evaluated {
+    test_string_object(evaluated, "Hello World!");
+}
+
+fn test_string_object(obj: Object, expected: &str) {
+    match obj {
         Object::Str(monk_str) => {
             assert_eq!(
-                monk_str.value, "Hello World!",
+                monk_str.value, expected,
                 "String has wrong value. got={}",
                 monk_str.value
             );
@@ -379,28 +383,83 @@ enum Expected {
     Int64(i64),
     Str(String),
     Bool(bool),
+    Array(Vec<Expected>),
+    Null,
 }
 
 #[test]
 fn test_builtin_functions() {
     let tests = [
+        // `len` tests
         (r#"len("")"#, Expected::Int64(0)),
         (r#"len("four")"#, Expected::Int64(4)),
         (r#"len("hello world")"#, Expected::Int64(11)),
         ("len(1)", Expected::Str("argument to `len` not supported, got INTEGER".to_string())),
         (r#"len("one", "two")"#, Expected::Str("wrong number of arguments. got=2, want=1".to_string())),
+
+        // `str` tests
         ("str(42)", Expected::Str("42".to_string())),
         (r#"str("hello world")"#, Expected::Str("hello world".to_string())),
         ("str(fn(x, y) { x + y; })", Expected::Str("fn(x, y) {\n(x + y)\n}".to_string())),
         ("str(if (1 > 10) { 1; })", Expected::Str("null".to_string())),
         ("str(true)", Expected::Str("true".to_string())),
+
+        // `int` tests
         (r#"int("42")"#, Expected::Int64(42)),
         (r#"int(42)"#, Expected::Int64(42)),
         ("int(true)", Expected::Int64(1)),
         ("int(false)", Expected::Int64(0)),
         (r#"int("hello42")"#, Expected::Str("could not convert the given STRING `hello42` into INTEGER".to_string())),
+
+        // `str` and `int` tests
         ("int(str(40)) + int(str(2))", Expected::Int64(42)),
         ("str(int(40)) + str(int(2))", Expected::Str("402".to_string())),
+
+        // `head` tests
+        ("head([1,2,3])", Expected::Int64(1)),
+        ("head([])", Expected::Null),
+        (r#"head("hello")"#, Expected::Str("h".to_string())),
+        (r#"head("")"#, Expected::Null),
+        ("head(1)", Expected::Str("argument to `head` must be ARRAY or STRING, got INTEGER".to_string())),
+
+        // `last` tests
+        ("last([1,2,3])", Expected::Int64(3)),
+        ("last([])", Expected::Null),
+        (r#"last("hello")"#, Expected::Str("o".to_string())),
+        (r#"last("")"#, Expected::Null),
+        ("last(1)", Expected::Str("argument to `last` must be ARRAY or STRING, got INTEGER".to_string())),
+
+        // `tail` tests
+        ("let a = [1, 2, 3, 4]; tail(a);", Expected::Array(vec![Expected::Int64(2), Expected::Int64(3), Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; tail(tail(a));", Expected::Array(vec![Expected::Int64(3), Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; tail(tail(tail(a)));", Expected::Array(vec![Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; tail(tail(tail(tail(a))));", Expected::Array(vec![])),
+        ("let a = [1, 2, 3, 4]; tail(tail(tail(tail(tail(a)))));", Expected::Null),
+
+        (r#"let a = "hello"; tail(a);"#, Expected::Str("ello".to_string())),
+        (r#"let a = "hello"; tail(tail(a));"#, Expected::Str("llo".to_string())),
+        (r#"let a = "hello"; tail(tail(tail(a)));"#, Expected::Str("lo".to_string())),
+        (r#"let a = "hello"; tail(tail(tail(tail(a))));"#, Expected::Str("o".to_string())),
+        (r#"let a = "hello"; tail(tail(tail(tail(tail(a)))));"#, Expected::Str("".to_string())),
+        (r#"let a = "hello"; tail(tail(tail(tail(tail(tail(a))))));"#, Expected::Null),
+
+        // `init` tests
+        ("let a = [1, 2, 3, 4]; init(a);", Expected::Array(vec![Expected::Int64(1), Expected::Int64(2), Expected::Int64(3)])),
+        ("let a = [1, 2, 3, 4]; init(init(a));", Expected::Array(vec![Expected::Int64(1), Expected::Int64(2)])),
+        ("let a = [1, 2, 3, 4]; init(init(init(a)));", Expected::Array(vec![Expected::Int64(1)])),
+        ("let a = [1, 2, 3, 4]; init(init(init(init(a))));", Expected::Array(vec![])),
+        ("let a = [1, 2, 3, 4]; init(init(init(init(init(a)))));", Expected::Null),
+
+        (r#"let a = "hello"; init(a);"#, Expected::Str("hell".to_string())),
+        (r#"let a = "hello"; init(init(a));"#, Expected::Str("hel".to_string())),
+        (r#"let a = "hello"; init(init(init(a)));"#, Expected::Str("he".to_string())),
+        (r#"let a = "hello"; init(init(init(init(a))));"#, Expected::Str("h".to_string())),
+        (r#"let a = "hello"; init(init(init(init(init(a)))));"#, Expected::Str("".to_string())),
+        (r#"let a = "hello"; init(init(init(init(init(init(a))))));"#, Expected::Null),
+
+        // `push` tests
+        ("push([1,2,3], 4)", Expected::Array([1,2,3,4].iter().map(|n| Expected::Int64(*n)).collect::<Vec<Expected>>())),
+        (r#"push("hell", "o")"#, Expected::Str("argument to `push` must be ARRAY, got STRING".to_string())),
     ];
 
     for (input, expected) in &tests {
@@ -434,6 +493,40 @@ fn test_builtin_functions() {
                     }
                 }
             },
+            Expected::Null => {
+                test_null_object(evaluated);
+            }
+            Expected::Array(v) => {
+                match evaluated {
+                    Object::Array(array) => {
+                        assert_eq!(
+                            array.elements.len(), v.len(),
+                            "wrong length of Array. expected={}, got={}",
+                            v.len(), array.elements.len()
+                        );
+                        if v.len() == 0 {
+                            continue;
+                        }
+                        for (i, v_elem) in v.iter().enumerate() {
+                            match v_elem {
+                                Expected::Int64(num) => {
+                                    test_integer_object(array.elements[i].clone(), *num);
+                                },
+                                Expected::Str(string) => {
+                                    test_string_object(array.elements[i].clone(), string);
+                                },
+                                _ => unreachable!(),
+                            }
+                        }
+                    },
+                    other => {
+                        panic!(
+                            "object is not Array. got={:?}",
+                            other
+                        );
+                    }
+                }
+            }
             _ => unreachable!()
         }
     }
