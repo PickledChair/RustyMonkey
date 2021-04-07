@@ -610,3 +610,29 @@ fn test_array_index_expressions() {
         }
     }
 }
+
+#[test]
+fn test_string_index_expressions() {
+    let tests = [
+        (
+            r#""hello, world"[5]"#,
+            Some(",")
+        ),
+        (
+            r#"let myStr = "hello"; myStr[0];"#,
+            Some("h")
+        ),
+        (
+            r#"let myStr = "hello"; myStr[5];"#,
+            None
+        ),
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+        match expected {
+            Some(text) => test_string_object(evaluated, text),
+            None => test_null_object(evaluated),
+        }
+    }
+}

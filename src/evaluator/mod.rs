@@ -326,6 +326,9 @@ fn eval_index_expression(left: Object, index: Object) -> Object {
         (Object::Array(array), Object::Integer(integer)) => {
             eval_array_index_expression(*array, integer)
         },
+        (Object::Str(monk_str), Object::Integer(integer)) => {
+            eval_string_index_expression(monk_str, integer)
+        },
         (left, _) => {
             Error::new(format!(
                 "index operator not supported: {}",
@@ -344,6 +347,17 @@ fn eval_array_index_expression(array: Array, index: Integer) -> Object {
     }
 
     array.elements[idx as usize].clone()
+}
+
+fn eval_string_index_expression(monk_str: MonkeyStr, index: Integer) -> Object {
+    let idx = index.value;
+    let max = (monk_str.value.len() - 1) as i64;
+
+    if idx < 0 || idx > max {
+        return NULL;
+    }
+
+    MonkeyStr::new(monk_str.value.chars().nth(idx as usize).unwrap().to_string()).into()
 }
 
 #[cfg(test)]
