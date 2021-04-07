@@ -396,6 +396,8 @@ fn test_builtin_functions() {
         ("str(true)", Expected::Str("true".to_string())),
         (r#"int("42")"#, Expected::Int64(42)),
         (r#"int(42)"#, Expected::Int64(42)),
+        ("int(true)", Expected::Int64(1)),
+        ("int(false)", Expected::Int64(0)),
         (r#"int("hello42")"#, Expected::Str("could not convert the given STRING `hello42` into INTEGER".to_string())),
         ("int(str(40)) + int(str(2))", Expected::Int64(42)),
         ("str(int(40)) + str(int(2))", Expected::Str("402".to_string())),

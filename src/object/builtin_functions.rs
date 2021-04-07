@@ -67,6 +67,8 @@ pub fn builtin_int(args: Vec<Object>) -> Object {
                 )).into()
             }
         },
+        TRUE => Integer::new(1).into(),
+        FALSE => Integer::new(0).into(),
         Object::Integer(integer) => integer.into(),
         other => Error::new(format!(
             "argument to `int` not supported, got {}",
