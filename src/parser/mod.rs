@@ -49,13 +49,18 @@ impl<'a> Parser<'a> {
             cur_token: Token::new(TokenKind::Illegal, None),
             errors: Vec::new(),
         };
-        p.next_token();
+        if let Err(err) = p.next_token() {
+            p.errors.push(err);
+        }
         p
     }
 
-    fn next_token(&mut self) {
+    fn next_token(&mut self) -> Result<(), String> {
         if let Some(tok) = self.lex.next() {
             self.cur_token = tok;
+            Ok(())
+        } else {
+            Err("illegal token found".to_string())
         }
     }
 
@@ -65,7 +70,7 @@ impl<'a> Parser<'a> {
                 return Err(peek_error_msg(kind, tok.kind()));
             }
         }
-        self.next_token();
+        self.next_token()?;
         Ok(())
     }
 
@@ -82,7 +87,10 @@ impl<'a> Parser<'a> {
                 Ok(stmt) => program.statements.push(stmt),
                 Err(msg) => self.errors.push(msg),
             }
-            self.next_token();
+            if let Err(err) = self.next_token() {
+                self.errors.push(err);
+                break;
+            }
         }
 
         program
@@ -105,7 +113,7 @@ impl<'a> Parser<'a> {
 
         self.expect_peek(TokenKind::Assign)?;
 
-        self.next_token();
+        self.next_token()?;
 
         let value = self.parse_expression(Lowest)?;
 
@@ -113,7 +121,7 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = self.lex.peek() {
             if tok.kind() == TokenKind::Semicolon {
-                self.next_token();
+                self.next_token()?;
             }
         }
 
@@ -123,7 +131,7 @@ impl<'a> Parser<'a> {
     fn parse_return_statement(&mut self) -> Result<ReturnStatement, String> {
         let ret_tok = self.cur_token.clone();
 
-        self.next_token();
+        self.next_token()?;
 
         let ret_value = self.parse_expression(Lowest)?;
 
@@ -131,7 +139,7 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = self.lex.peek() {
             if tok.kind() == TokenKind::Semicolon {
-                self.next_token();
+                self.next_token()?;
             }
         }
 
@@ -146,27 +154,27 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = self.lex.peek() {
             if tok.kind() == TokenKind::Semicolon {
-                self.next_token();
+                self.next_token()?;
             }
         }
 
         Ok(stmt)
     }
 
-    fn parse_block_statement(&mut self) -> BlockStatement {
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, String> {
         let mut block = BlockStatement::new(self.cur_token.clone());
 
-        self.next_token();
+        self.next_token()?;
 
         while !matches!(self.cur_token.kind(), TokenKind::Rbrace | TokenKind::Eof) {
             let stmt = self.parse_statement();
             if let Ok(stmt) = stmt {
                 block.statements.push(stmt);
             }
-            self.next_token();
+            self.next_token()?;
         }
 
-        block
+        Ok(block)
     }
 
     fn parse_expression(&mut self, prec: Precedence) -> Result<Expression, String> {
@@ -191,19 +199,19 @@ impl<'a> Parser<'a> {
                 if peek_kind != Semicolon && prec < get_precedence(peek_kind) {
                     match peek_kind {
                         Plus | Minus | Slash | Asterisk | Eq | NotEq | Lt | Gt => {
-                            self.next_token();
+                            self.next_token()?;
 
                             left_exp = self.parse_infix_expression(left_exp)?;
                             continue;
                         },
                         Lparen => {
-                            self.next_token();
+                            self.next_token()?;
 
                             left_exp = self.parse_call_expression(left_exp)?;
                             continue;
                         },
                         Lbracket => {
-                            self.next_token();
+                            self.next_token()?;
 
                             left_exp = self.parse_index_expression(left_exp)?;
                             continue;
@@ -240,7 +248,7 @@ impl<'a> Parser<'a> {
     fn parse_prefix_expression(&mut self) -> Result<Expression, String> {
         let cur_token = self.cur_token.clone();
 
-        self.next_token();
+        self.next_token()?;
 
         let right = self.parse_expression(Prefix)?;
 
@@ -253,7 +261,7 @@ impl<'a> Parser<'a> {
         let cur_token = self.cur_token.clone();
         let precedence = self.cur_precedence();
 
-        self.next_token();
+        self.next_token()?;
 
         let right = self.parse_expression(precedence)?;
 
@@ -263,7 +271,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_grouped_expression(&mut self) -> Result<Expression, String> {
-        self.next_token();
+        self.next_token()?;
 
         let exp = self.parse_expression(Lowest)?;
 
@@ -276,7 +284,7 @@ impl<'a> Parser<'a> {
         let cur_token = self.cur_token.clone();
 
         self.expect_peek(TokenKind::Lparen)?;
-        self.next_token();
+        self.next_token()?;
 
         let condition = self.parse_expression(Lowest)?;
 
@@ -284,13 +292,13 @@ impl<'a> Parser<'a> {
 
         self.expect_peek(TokenKind::Lbrace)?;
 
-        let consequence = self.parse_block_statement();
+        let consequence = self.parse_block_statement()?;
 
         let alternative = if let Some(tok) = self.lex.peek() {
             if tok.kind() == TokenKind::Else {
-                self.next_token();
+                self.next_token()?;
                 self.expect_peek(TokenKind::Lbrace)?;
-                Some(self.parse_block_statement())
+                Some(self.parse_block_statement()?)
             } else {
                 None
             }
@@ -308,12 +316,12 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = self.lex.peek() {
             if tok.kind() == TokenKind::Rparen {
-                self.next_token();
+                self.next_token()?;
                 return Ok(identifiers);
             }
         }
 
-        self.next_token();
+        self.next_token()?;
 
         let ident = Identifier::new(self.cur_token.clone());
         identifiers.push(ident);
@@ -321,8 +329,8 @@ impl<'a> Parser<'a> {
         loop {
             if let Some(tok) = self.lex.peek() {
                 if tok.kind() == TokenKind::Comma {
-                    self.next_token();
-                    self.next_token();
+                    self.next_token()?;
+                    self.next_token()?;
                     let ident = Identifier::new(self.cur_token.clone());
                     identifiers.push(ident);
                     continue;
@@ -346,7 +354,7 @@ impl<'a> Parser<'a> {
 
         self.expect_peek(TokenKind::Lbrace)?;
 
-        let body = self.parse_block_statement();
+        let body = self.parse_block_statement()?;
 
         Ok(Expression::FuncLiteral(Box::new(
             FunctionLiteral::new(cur_token, parameters, body)
@@ -358,19 +366,19 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = self.lex.peek() {
             if tok.kind() == end {
-                self.next_token();
+                self.next_token()?;
                 return Ok(args);
             }
         }
 
-        self.next_token();
+        self.next_token()?;
         args.push(self.parse_expression(Lowest)?);
 
         loop {
             if let Some(tok) = self.lex.peek() {
                 if tok.kind() == TokenKind::Comma {
-                    self.next_token();
-                    self.next_token();
+                    self.next_token()?;
+                    self.next_token()?;
                     args.push(self.parse_expression(Lowest)?);
                     continue;
                 }
@@ -400,7 +408,7 @@ impl<'a> Parser<'a> {
     fn parse_index_expression(&mut self, left: Expression) -> Result<Expression, String> {
         let token = self.cur_token.clone();
 
-        self.next_token();
+        self.next_token()?;
 
         let index = self.parse_expression(Lowest)?;
 

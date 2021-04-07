@@ -48,14 +48,18 @@ impl<'a> Lexer<'a> {
         return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
     }
 
-    fn read_identifier(&mut self) -> &str {
+    fn read_identifier(&mut self) -> Option<&str> {
         let pos = self.pos;
         let mut is_first = true;
         while Lexer::is_letter(self.ch) || (!is_first && Lexer::is_digit(self.ch)) {
             self.read_char();
             is_first = false;
         }
-        &self.input[pos..self.pos]
+        if pos == self.pos {
+            None
+        } else {
+            Some(&self.input[pos..self.pos])
+        }
     }
 
     fn is_digit(ch: char) -> bool {
@@ -196,8 +200,11 @@ impl<'a> Lexer<'a> {
             '\0' => Token::new(TokenKind::Eof, None),
             _ => {
                 if Lexer::is_letter(self.ch) {
-                    let literal = self.read_identifier();
-                    lookup_ident(literal)
+                    if let Some(literal) = self.read_identifier() {
+                        lookup_ident(literal)
+                    } else {
+                        Token::new(TokenKind::Illegal, None)
+                    }
                 } else if Lexer::is_digit(self.ch) {
                     Token::new(TokenKind::Int, Some(self.read_number().to_string()))
                 } else {
