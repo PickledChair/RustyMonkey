@@ -396,6 +396,7 @@ fn test_builtin_functions() {
         (r#"len("hello world")"#, Expected::Int64(11)),
         ("len(1)", Expected::Str("argument to `len` not supported, got INTEGER".to_string())),
         (r#"len("one", "two")"#, Expected::Str("wrong number of arguments. got=2, want=1".to_string())),
+        (r#"len("こんにちは")"#, Expected::Int64(5)),
 
         // `str` tests
         ("str(42)", Expected::Str("42".to_string())),

@@ -31,7 +31,7 @@ pub fn builtin_len(args: Vec<Object>) -> Object {
     }
 
     match args[0].clone() {
-        Object::Str(monk_str) => Integer::new(monk_str.value.len() as i64).into(),
+        Object::Str(monk_str) => Integer::new(monk_str.value.chars().count() as i64).into(),
         Object::Array(array) => Integer::new(array.elements.len() as i64).into(),
         other => Error::new(format!(
             "argument to `len` not supported, got {}",
