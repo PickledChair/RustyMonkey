@@ -14,12 +14,7 @@ impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Result<Lexer<'a>, &'static str> {
         let mut chars = input.char_indices().peekable();
         if let Some((pos, ch)) = chars.next() {
-            Ok(Lexer {
-                input,
-                chars: chars,
-                ch,
-                pos,
-            })
+            Ok(Lexer { input, chars, ch, pos })
         } else {
             Err("'input' should not be an empty str.")
         }
