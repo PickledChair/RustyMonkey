@@ -41,14 +41,13 @@ pub fn builtin_str(args: Vec<Object>) -> Object {
 
     match args[0].clone() {
         Object::Str(monk_str) => monk_str.into(),
-        Object::Integer(integer) => {
-            let value = integer.value;
-            MonkeyStr::new(value.to_string()).into()
-        },
-        other => Error::new(format!(
-            "argument to `str` not supported, got {}",
-            other.get_type().as_str()
-        )).into()
+        Object::Integer(integer) => MonkeyStr::new(integer.inspect()).into(),
+        Object::Error(err) => MonkeyStr::new(err.inspect()).into(),
+        Object::Function(func) => MonkeyStr::new(func.inspect()).into(),
+        Object::Null(null) => MonkeyStr::new(null.inspect()).into(),
+        Object::ReturnValue(ret) => MonkeyStr::new(ret.inspect()).into(),
+        Object::Builtin(builtin) => MonkeyStr::new(builtin.inspect()).into(),
+        Object::Bool(boolean) => MonkeyStr::new(boolean.inspect()).into(),
     }
 }
 
