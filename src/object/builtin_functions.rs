@@ -27,6 +27,7 @@ pub fn builtin_len(args: Vec<Object>) -> Object {
 
     match args[0].clone() {
         Object::Str(monk_str) => Integer::new(monk_str.value.len() as i64).into(),
+        Object::Array(array) => Integer::new(array.elements.len() as i64).into(),
         other => Error::new(format!(
             "argument to `len` not supported, got {}",
             other.get_type().as_str()
@@ -48,6 +49,7 @@ pub fn builtin_str(args: Vec<Object>) -> Object {
         Object::ReturnValue(ret) => MonkeyStr::new(ret.inspect()).into(),
         Object::Builtin(builtin) => MonkeyStr::new(builtin.inspect()).into(),
         Object::Bool(boolean) => MonkeyStr::new(boolean.inspect()).into(),
+        Object::Array(array) => MonkeyStr::new(array.inspect()).into()
     }
 }
 

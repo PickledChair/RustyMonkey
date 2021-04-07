@@ -14,6 +14,7 @@ pub enum ObjectType {
     ReturnValueObj,
     FunctionObj,
     BuiltinObj,
+    ArrayObj,
     ErrorObj,
 }
 
@@ -27,6 +28,7 @@ impl ObjectType {
             Self::ReturnValueObj => "RETURN_VALUE",
             Self::FunctionObj => "FUNCTION",
             Self::BuiltinObj => "BUILTIN",
+            Self::ArrayObj => "ARRAY",
             Self::ErrorObj => "ERROR",
         }
     }
@@ -45,6 +47,7 @@ pub enum Object {
     ReturnValue(Box<ReturnValue>),
     Function(Box<Function>),
     Builtin(Builtin),
+    Array(Box<Array>),
     Null(Null),
     Error(Error),
 }
@@ -73,6 +76,7 @@ impl ObjectExt for Object {
             Self::ReturnValue(ret_val) => ret_val.get_type(),
             Self::Function(func) => func.get_type(),
             Self::Builtin(builtin) => builtin.get_type(),
+            Self::Array(array) => array.get_type(),
             Self::Null(null) => null.get_type(),
             Self::Error(err) => err.get_type(),
         }
@@ -86,6 +90,7 @@ impl ObjectExt for Object {
             Self::ReturnValue(ret_val) => ret_val.inspect(),
             Self::Function(func) => func.inspect(),
             Self::Builtin(builtin) => builtin.inspect(),
+            Self::Array(array) => array.inspect(),
             Self::Null(null) => null.inspect(),
             Self::Error(err) => err.inspect(),
         }
@@ -318,5 +323,44 @@ impl ObjectExt for Builtin {
 impl From<Builtin> for Object {
     fn from(builtin: Builtin) -> Object {
         Object::Builtin(builtin)
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Array {
+    pub elements: Vec<Object>,
+}
+
+impl Array {
+    pub fn new(elements: Vec<Object>) -> Array {
+        Array { elements }
+    }
+}
+
+impl ObjectExt for Array {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::ArrayObj
+    }
+
+    fn inspect(&self) -> String {
+        let mut ret = String::from("[");
+
+        let mut is_first = true;
+        for element in &self.elements {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
+            ret = ret + &element.inspect();
+        }
+
+        ret + "]"
+    }
+}
+
+impl From<Array> for Object {
+    fn from(array: Array) -> Object {
+        Object::Array(Box::new(array))
     }
 }

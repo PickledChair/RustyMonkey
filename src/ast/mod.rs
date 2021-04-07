@@ -15,6 +15,8 @@ pub enum Node {
     FuncLiteral(FunctionLiteral),
     CallExpr(CallExpression),
     StrLiteral(StringLiteral),
+    ArrayLiteral(ArrayLiteral),
+    IndexExpr(IndexExpression),
 }
 
 pub trait NodeExt {
@@ -184,17 +186,7 @@ impl NodeExt for ExpressionStatement {
     }
 
     fn into_node(self) -> Node {
-        match self.expression {
-            Expression::Boolean(boolean) => boolean.into_node(),
-            Expression::CallExpr(call) => call.into_node(),
-            Expression::FuncLiteral(func) => func.into_node(),
-            Expression::Identifier(ident) => ident.into_node(),
-            Expression::IfExpr(if_expr) => if_expr.into_node(),
-            Expression::InfixExpr(infix) => infix.into_node(),
-            Expression::IntLiteral(int_lit) => int_lit.into_node(),
-            Expression::PrefixExpr(prefix) => prefix.into_node(),
-            Expression::StrLiteral(str_lit) => str_lit.into_node(),
-        }
+        self.expression.into_node()
     }
 }
 
@@ -247,6 +239,8 @@ pub enum Expression {
     FuncLiteral(Box<FunctionLiteral>),
     CallExpr(Box<CallExpression>),
     StrLiteral(Box<StringLiteral>),
+    ArrayLiteral(Box<ArrayLiteral>),
+    IndexExpr(Box<IndexExpression>),
 }
 
 impl NodeExt for Expression {
@@ -261,6 +255,8 @@ impl NodeExt for Expression {
             Expression::FuncLiteral(func_lit) => func_lit.token_literal(),
             Expression::CallExpr(call_expr) => call_expr.token_literal(),
             Expression::StrLiteral(str_lit) => str_lit.token_literal(),
+            Expression::ArrayLiteral(array) => array.token_literal(),
+            Expression::IndexExpr(index) => index.token_literal(),
         }
     }
 
@@ -275,6 +271,8 @@ impl NodeExt for Expression {
             Expression::FuncLiteral(func_lit) => func_lit.to_string(),
             Expression::CallExpr(call_expr) => call_expr.to_string(),
             Expression::StrLiteral(str_lit) => str_lit.to_string(),
+            Expression::ArrayLiteral(array) => array.to_string(),
+            Expression::IndexExpr(index) => index.to_string(),
         }
     }
 
@@ -289,6 +287,8 @@ impl NodeExt for Expression {
             Expression::FuncLiteral(func_lit) => func_lit.into_node(),
             Expression::CallExpr(call_expr) => call_expr.into_node(),
             Expression::StrLiteral(str_lit) => str_lit.into_node(),
+            Expression::ArrayLiteral(array) => array.into_node(),
+            Expression::IndexExpr(index) => index.into_node(),
         }
     }
 }
@@ -626,6 +626,77 @@ impl NodeExt for StringLiteral {
 }
 
 impl ExpressionExt for StringLiteral {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ArrayLiteral {
+    pub token: Token,
+    pub elements: Vec<Expression>,
+}
+
+impl ArrayLiteral {
+    pub fn new(token: Token, elements: Vec<Expression>) -> ArrayLiteral {
+        ArrayLiteral { token, elements }
+    }
+}
+
+impl NodeExt for ArrayLiteral {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        let mut ret = String::from("[");
+
+        let mut is_first = true;
+        for element in &self.elements {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
+            ret = ret + &element.to_string();
+        }
+
+        ret + "]"
+    }
+
+    fn into_node(self) -> Node {
+        Node::ArrayLiteral(self)
+    }
+}
+
+impl ExpressionExt for ArrayLiteral {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct IndexExpression {
+    pub token: Token,
+    pub left: Expression,
+    pub index: Expression,
+}
+
+impl IndexExpression {
+    pub fn new(token: Token, left: Expression, index: Expression) -> IndexExpression {
+        IndexExpression { token, left, index }
+    }
+}
+
+impl NodeExt for IndexExpression {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        String::from("(")
+            + &self.left.to_string()
+            + "["
+            + &self.index.to_string()
+            + "])"
+    }
+
+    fn into_node(self) -> Node {
+        Node::IndexExpr(self)
+    }
+}
 
 #[cfg(test)]
 mod ast_test;

@@ -176,6 +176,14 @@ impl<'a> Lexer<'a> {
                 self.read_char();
                 Token::new(TokenKind::Rbrace, None)
             },
+            '[' => {
+                self.read_char();
+                Token::new(TokenKind::Lbracket, None)
+            },
+            ']' => {
+                self.read_char();
+                Token::new(TokenKind::Rbracket, None)
+            }
             '"' => {
                 let literal = self.read_string();
                 if let Some(literal) = literal {

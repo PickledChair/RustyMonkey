@@ -526,6 +526,14 @@ fn test_operator_precedence_parsing() {
             "add(a + b + c * d / f + g)",
             "add((((a + b) + ((c * d) / f)) + g))"
         ),
+        (
+            "a * [1, 2, 3, 4][b * c] * d",
+            "((a * ([1, 2, 3, 4][(b * c)])) * d)"
+        ),
+        (
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"
+        ),
     ];
 
     for (input, expected) in tests.iter() {
@@ -926,6 +934,136 @@ fn test_string_literal_expression() {
             panic!(
                 "stmt not Statment::ExprStmt(_). got={:?}",
                 other
+            );
+        }
+    }
+}
+
+#[test]
+fn test_parsing_array_literals() {
+    let input = "[1, 2 * 2, 3 + 3]";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::ArrayLiteral(array) => {
+                    assert_eq!(
+                        array.elements.len(), 3,
+                        "array.elements.len() not {}, got={}",
+                        3, array.elements.len()
+                    );
+
+                    test_integer_literal(array.elements[0].clone(), 1);
+                    test_infix_expression(
+                        array.elements[1].clone(),
+                        &Expected::Int64(2),
+                        "*".to_string(),
+                        &Expected::Int64(2)
+                    );
+                    test_infix_expression(
+                        array.elements[2].clone(),
+                        &Expected::Int64(3),
+                        "+".to_string(),
+                        &Expected::Int64(3)
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::ArrayLiteral(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+fn test_parsing_empty_array_literal() {
+    let input = "[]";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::ArrayLiteral(array) => {
+                    assert_eq!(
+                        array.elements.len(), 0,
+                        "array.elements.len() not {}, got={}",
+                        0, array.elements.len()
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::ArrayLiteral(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+fn test_parsing_index_expressions() {
+    let input = "myArray[1 + 1]";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::IndexExpr(index) => {
+                    test_identifier(index.left, "myArray");
+                    test_infix_expression(
+                        index.index,
+                        &Expected::Int64(1),
+                        "+".to_string(),
+                        &Expected::Int64(1)
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::IndexExpr(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
             );
         }
     }

@@ -68,7 +68,25 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             }
             apply_function(func, args)
         },
-        Node::StrLiteral(str_lit) => Some(MonkeyStr::new(str_lit.value).into())
+        Node::StrLiteral(str_lit) => Some(MonkeyStr::new(str_lit.value).into()),
+        Node::ArrayLiteral(array) => {
+            let elements = eval_expressions(array.elements, env)?;
+            if elements.len() == 1 && elements[0].is_error() {
+                return Some(elements[0].clone());
+            }
+            Some(Array::new(elements).into())
+        },
+        Node::IndexExpr(index_expr) => {
+            let left = eval(index_expr.left.into_node(), env.clone())?;
+            if left.is_error() {
+                return Some(left);
+            }
+            let index = eval(index_expr.index.into_node(), env)?;
+            if index.is_error() {
+                return Some(index);
+            }
+            Some(eval_index_expression(left, index))
+        },
     }
 }
 
@@ -295,6 +313,31 @@ fn unwrap_return_value(obj: Object) -> Object {
     } else {
         obj
     }
+}
+
+fn eval_index_expression(left: Object, index: Object) -> Object {
+    match (left, index) {
+        (Object::Array(array), Object::Integer(integer)) => {
+            eval_array_index_expression(*array, integer)
+        },
+        (left, _) => {
+            Error::new(format!(
+                "index operator not supported: {}",
+                left.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+fn eval_array_index_expression(array: Array, index: Integer) -> Object {
+    let idx = index.value;
+    let max = (array.elements.len() - 1) as i64;
+
+    if idx < 0 || idx > max {
+        return NULL;
+    }
+
+    array.elements[idx as usize].clone()
 }
 
 #[cfg(test)]

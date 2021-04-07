@@ -15,6 +15,7 @@ enum Precedence {
     Product,       // *
     Prefix,        // -X または !X
     Call,          // myFunction(X)
+    Index,         // array[index]
 }
 
 use Precedence::*;
@@ -30,6 +31,7 @@ fn get_precedence(kind: TokenKind) -> Precedence {
         TokenKind::Slash => Product,
         TokenKind::Asterisk => Product,
         TokenKind::Lparen => Call,
+        TokenKind::Lbracket => Index,
         _ => Lowest,
     }
 }
@@ -179,6 +181,7 @@ impl<'a> Parser<'a> {
             Lparen => self.parse_grouped_expression()?,
             If => self.parse_if_expression()?,
             Function => self.parse_function_literal()?,
+            Lbracket => self.parse_array_literal()?,
             _ => return Err(format!("no prefix parse function for {} found", self.cur_token.kind()))
         };
 
@@ -198,7 +201,13 @@ impl<'a> Parser<'a> {
 
                             left_exp = self.parse_call_expression(left_exp)?;
                             continue;
-                        }
+                        },
+                        Lbracket => {
+                            self.next_token();
+
+                            left_exp = self.parse_index_expression(left_exp)?;
+                            continue;
+                        },
                         _ => ()
                     }
                 }
@@ -344,11 +353,11 @@ impl<'a> Parser<'a> {
         )))
     }
 
-    fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, String> {
+    fn parse_expression_list(&mut self, end: TokenKind) -> Result<Vec<Expression>, String> {
         let mut args = Vec::new();
 
         if let Some(tok) = self.lex.peek() {
-            if tok.kind() == TokenKind::Rparen {
+            if tok.kind() == end {
                 self.next_token();
                 return Ok(args);
             }
@@ -370,15 +379,36 @@ impl<'a> Parser<'a> {
             break;
         }
 
-        self.expect_peek(TokenKind::Rparen)?;
+        self.expect_peek(end)?;
 
         Ok(args)
     }
 
     fn parse_call_expression(&mut self, function: Expression) -> Result<Expression, String> {
         let mut exp = CallExpression::new(self.cur_token.clone(), function);
-        exp.arguments = self.parse_call_arguments()?;
+        exp.arguments = self.parse_expression_list(TokenKind::Rparen)?;
         Ok(Expression::CallExpr(Box::new(exp)))
+    }
+
+    fn parse_array_literal(&mut self) -> Result<Expression, String> {
+        let token = self.cur_token.clone();
+        let elements = self.parse_expression_list(TokenKind::Rbracket)?;
+        let array = ArrayLiteral::new(token, elements);
+        Ok(Expression::ArrayLiteral(Box::new(array)))
+    }
+
+    fn parse_index_expression(&mut self, left: Expression) -> Result<Expression, String> {
+        let token = self.cur_token.clone();
+
+        self.next_token();
+
+        let index = self.parse_expression(Lowest)?;
+
+        self.expect_peek(TokenKind::Rbracket)?;
+
+        Ok(Expression::IndexExpr(Box::new(
+            IndexExpression::new(token, left, index)
+        )))
     }
 }
 

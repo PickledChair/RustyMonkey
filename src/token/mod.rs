@@ -32,6 +32,8 @@ pub enum TokenKind {
     Rparen,
     Lbrace,
     Rbrace,
+    Lbracket,
+    Rbracket,
 
     // キーワード
     Function,
@@ -67,6 +69,8 @@ impl TokenKind {
             Self::Rparen => ")",
             Self::Lbrace => "{",
             Self::Rbrace => "}",
+            Self::Lbracket => "[",
+            Self::Rbracket => "]",
             Self::Function => "fn",
             Self::Let => "let",
             Self::True => "true",
