@@ -351,7 +351,7 @@ fn eval_array_index_expression(array: Array, index: Integer) -> Object {
 
 fn eval_string_index_expression(monk_str: MonkeyStr, index: Integer) -> Object {
     let idx = index.value;
-    let max = (monk_str.value.len() - 1) as i64;
+    let max = (monk_str.value.chars().count() - 1) as i64;
 
     if idx < 0 || idx > max {
         return NULL;

@@ -1,24 +1,24 @@
 use super::token::*;
 
 use std::iter::Peekable;
-use std::str::Chars;
+use std::str::CharIndices;
 
 pub struct Lexer<'a> {
     input: &'a str,
-    chars: Peekable<Chars<'a>>,
+    chars: Peekable<CharIndices<'a>>,
     ch: char,
     pos: usize,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Result<Lexer<'a>, &'static str> {
-        let mut chars = input.chars().peekable();
-        if let Some(ch) = chars.next() {
+        let mut chars = input.char_indices().peekable();
+        if let Some((pos, ch)) = chars.next() {
             Ok(Lexer {
                 input,
                 chars: chars,
                 ch,
-                pos: 0,
+                pos,
             })
         } else {
             Err("'input' should not be an empty str.")
@@ -31,12 +31,13 @@ impl<'a> Lexer<'a> {
             self.pos += 1;
             return;
         }
-        self.ch = self.chars.next().unwrap();
-        self.pos += 1;
+        let idx_char = self.chars.next().unwrap();
+        self.ch = idx_char.1;
+        self.pos = idx_char.0;
     }
 
     fn peek_char(&mut self) -> char {
-        if let Some(ch) = self.chars.peek() {
+        if let Some((_, ch)) = self.chars.peek() {
             *ch
         } else {
             '\0'
