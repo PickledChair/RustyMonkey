@@ -50,6 +50,7 @@ pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
 
                 let evaluated = eval(program.into_node(), env.clone());
                 if let Some(evaluated) = evaluated {
+                    out.write_all(b"=> ")?;
                     out.write_all(evaluated.inspect().as_str().as_bytes())?;
                     out.write_all(b"\n")?;
                     out.flush()?;

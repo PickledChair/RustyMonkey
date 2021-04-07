@@ -42,7 +42,7 @@ pub fn builtin_str(args: Vec<Object>) -> Object {
     match args[0].clone() {
         Object::Str(monk_str) => monk_str.into(),
         Object::Integer(integer) => MonkeyStr::new(integer.inspect()).into(),
-        Object::Error(err) => MonkeyStr::new(err.inspect()).into(),
+        Object::Error(_) => unreachable!(),
         Object::Function(func) => MonkeyStr::new(func.inspect()).into(),
         Object::Null(null) => MonkeyStr::new(null.inspect()).into(),
         Object::ReturnValue(ret) => MonkeyStr::new(ret.inspect()).into(),
