@@ -285,6 +285,12 @@ fn eval_expressions(exprs: Vec<Expression>, env: Environment) -> Option<Vec<Obje
 fn apply_function(func: Object, args: Vec<Object>) -> Option<Object> {
     match func {
         Object::Function(func) => {
+            if func.parameters.len() != args.len() {
+                return Some(Error::new(format!(
+                    "the number of arguments is not the same as the function parameters. args={}, params={}",
+                    args.len(), func.parameters.len()
+                )).into());
+            }
             let extended_env = extend_function_env(*func.clone(), args);
             let evaluated = eval(func.body.into_node(), extended_env)?;
             Some(unwrap_return_value(evaluated))
