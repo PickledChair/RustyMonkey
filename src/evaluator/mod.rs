@@ -357,7 +357,14 @@ fn eval_string_index_expression(monk_str: MonkeyStr, index: Integer) -> Object {
         return NULL;
     }
 
-    MonkeyStr::new(monk_str.value.chars().nth(idx as usize).unwrap().to_string()).into()
+    if let Some(ch) = monk_str.value.chars().nth(idx as usize) {
+        MonkeyStr::new(ch.to_string()).into()
+    } else {
+        Error::new(format!(
+            "could not access STRING `{}` by index",
+            monk_str.value
+        )).into()
+    }
 }
 
 #[cfg(test)]
