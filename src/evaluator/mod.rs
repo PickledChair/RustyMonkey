@@ -104,7 +104,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             let mut content = String::new();
             if file.unwrap().read_to_string(&mut content).is_err() {
                 return Some(Error::new(format!(
-                    "could not read file at importin the source: {}",
+                    "could not read file at importing the source: {}",
                     import.path.display()
                 )).into());
             }
