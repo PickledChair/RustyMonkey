@@ -10,6 +10,7 @@ pub fn search_builtins(name: &str) -> Option<Object> {
         "tail" => Some(Builtin::new(BuiltinFunction::new("tail", builtin_tail)).into()),
         "init" => Some(Builtin::new(BuiltinFunction::new("init", builtin_init)).into()),
         "push" => Some(Builtin::new(BuiltinFunction::new("push", builtin_push)).into()),
+        "puts" => Some(Builtin::new(BuiltinFunction::new("puts", builtin_puts)).into()),
         _ => None
     }
 }
@@ -230,4 +231,11 @@ pub fn builtin_push(args: Vec<Object>) -> Object {
             )).into()
         }
     }
+}
+
+pub fn builtin_puts(args: Vec<Object>) -> Object {
+    for arg in args.iter() {
+        println!("{}", arg.inspect());
+    }
+    NULL
 }
