@@ -41,7 +41,7 @@ pub trait ObjectExt {
     fn inspect(&self) -> String;
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
@@ -102,7 +102,36 @@ impl ObjectExt for Object {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub trait HashableExt: ObjectExt {
+    fn into_hashable(self) -> Hashable;
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum Hashable {
+    Integer(Integer),
+    Bool(Bool),
+    Str(MonkeyStr),
+}
+
+impl ObjectExt for Hashable {
+    fn get_type(&self) -> ObjectType {
+        match self {
+            Self::Integer(integer) => integer.get_type(),
+            Self::Bool(boolean) => boolean.get_type(),
+            Self::Str(monk_str) => monk_str.get_type(),
+        }
+    }
+
+    fn inspect(&self) -> String {
+        match self {
+            Self::Integer(integer) => integer.inspect(),
+            Self::Bool(boolean) => boolean.inspect(),
+            Self::Str(monk_str) => monk_str.inspect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Integer {
     pub value: i64,
 }
@@ -123,13 +152,19 @@ impl ObjectExt for Integer {
     }
 }
 
+impl HashableExt for Integer {
+    fn into_hashable(self) -> Hashable {
+        Hashable::Integer(self)
+    }
+}
+
 impl From<Integer> for Object {
     fn from(integer: Integer) -> Self {
         Object::Integer(integer)
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Bool {
     pub value: bool,
 }
@@ -144,13 +179,19 @@ impl ObjectExt for Bool {
     }
 }
 
+impl HashableExt for Bool {
+    fn into_hashable(self) -> Hashable {
+        Hashable::Bool(self)
+    }
+}
+
 impl From<bool> for Object {
     fn from(native_bool: bool) -> Self {
         if native_bool { TRUE } else { FALSE }
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Null {}
 
 impl ObjectExt for Null {
@@ -169,7 +210,7 @@ impl From<Null> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ReturnValue {
     pub value: Object,
 }
@@ -196,7 +237,7 @@ impl From<ReturnValue> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Error {
     pub message: String,
 }
@@ -223,7 +264,7 @@ impl From<Error> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
@@ -263,7 +304,7 @@ impl From<Function> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct MonkeyStr {
     pub value: String,
 }
@@ -284,13 +325,19 @@ impl ObjectExt for MonkeyStr {
     }
 }
 
+impl HashableExt for MonkeyStr {
+    fn into_hashable(self) -> Hashable {
+        Hashable::Str(self)
+    }
+}
+
 impl From<MonkeyStr> for Object {
     fn from(monk_str: MonkeyStr) -> Object {
         Object::Str(monk_str)
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BuiltinFunction {
     pub name: &'static str,
     pub f_ptr: fn(Vec<Object>) -> Object
@@ -302,7 +349,7 @@ impl BuiltinFunction {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Builtin {
     pub func: BuiltinFunction,
 }
@@ -331,7 +378,7 @@ impl From<Builtin> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Array {
     pub elements: Vec<Object>,
 }
@@ -370,15 +417,15 @@ impl From<Array> for Object {
     }
 }
 
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MonkeyHash {
-    pub pairs: BTreeMap<Object, Object>
+    pub pairs: HashMap<Hashable, Object>
 }
 
 impl MonkeyHash {
-    pub fn new(pairs: BTreeMap<Object, Object>) -> MonkeyHash {
+    pub fn new(pairs: HashMap<Hashable, Object>) -> MonkeyHash {
         MonkeyHash { pairs }
     }
 }

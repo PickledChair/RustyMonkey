@@ -330,6 +330,9 @@ fn eval_index_expression(left: Object, index: Object) -> Object {
         (Object::Str(monk_str), Object::Integer(integer)) => {
             eval_string_index_expression(monk_str, integer)
         },
+        (Object::Hash(hash), index) => {
+            eval_hash_index_expression(*hash, index)
+        },
         (left, _) => {
             Error::new(format!(
                 "index operator not supported: {}",
@@ -368,16 +371,28 @@ fn eval_string_index_expression(monk_str: MonkeyStr, index: Integer) -> Object {
     }
 }
 
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 fn eval_hash_literal(hash_lit: HashLiteral, env: Environment) -> Option<Object> {
-    let mut pairs = BTreeMap::new();
+    let mut pairs = HashMap::new();
 
     for (key_node, value_node) in hash_lit.pairs.iter() {
         let key = eval(key_node.clone().into_node(), env.clone())?;
         if key.is_error() {
             return Some(key);
         }
+
+        let key = match key {
+            Object::Integer(integer) => integer.into_hashable(),
+            Object::Bool(boolean) => boolean.into_hashable(),
+            Object::Str(monk_str) => monk_str.into_hashable(),
+            _ => {
+                return Some(Error::new(format!(
+                    "unusable as hash key: {}",
+                    key.get_type().as_str()
+                )).into());
+            }
+        };
 
         let value = eval(value_node.clone().into_node(), env.clone())?;
         if value.is_error() {
@@ -388,6 +403,26 @@ fn eval_hash_literal(hash_lit: HashLiteral, env: Environment) -> Option<Object> 
     }
 
     Some(MonkeyHash::new(pairs).into())
+}
+
+fn eval_hash_index_expression(hash: MonkeyHash, index: Object) -> Object {
+    let key = match index {
+        Object::Integer(integer) => integer.into_hashable(),
+        Object::Bool(boolean) => boolean.into_hashable(),
+        Object::Str(monk_str) => monk_str.into_hashable(),
+        _ => {
+            return Error::new(format!(
+                "unusable as hash key: {}",
+                index.get_type().as_str()
+            )).into();
+        }
+    };
+
+    if let Some(value) = hash.pairs.get(&key) {
+        value.clone()
+    } else {
+        NULL
+    }
 }
 
 #[cfg(test)]

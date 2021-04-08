@@ -228,6 +228,10 @@ if (10 > 1) {
             r#""Hello" - "World""#,
             "unknown operator: STRING - STRING"
         ),
+        (
+            r#"{"name": "Monkey"}[fn(x) { x }];"#,
+            "unusable as hash key: FUNCTION"
+        ),
     ];
 
     for (input, expected) in &tests {
@@ -638,7 +642,7 @@ fn test_string_index_expressions() {
     }
 }
 
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 #[test]
 fn test_hash_literals() {
@@ -656,13 +660,13 @@ fn test_hash_literals() {
 
     match evaluated {
         Object::Hash(hash) => {
-            let mut expected: BTreeMap<Object, i64> = BTreeMap::new();
-            expected.insert(MonkeyStr::new("one".to_string()).into(), 1);
-            expected.insert(MonkeyStr::new("two".to_string()).into(), 2);
-            expected.insert(MonkeyStr::new("three".to_string()).into(), 3);
-            expected.insert(Integer::new(4).into(), 4);
-            expected.insert(TRUE, 5);
-            expected.insert(FALSE, 6);
+            let mut expected: HashMap<Hashable, i64> = HashMap::new();
+            expected.insert(MonkeyStr::new("one".to_string()).into_hashable(), 1);
+            expected.insert(MonkeyStr::new("two".to_string()).into_hashable(), 2);
+            expected.insert(MonkeyStr::new("three".to_string()).into_hashable(), 3);
+            expected.insert(Integer::new(4).into_hashable(), 4);
+            expected.insert(Bool { value: true }.into_hashable(), 5);
+            expected.insert(Bool { value: false}.into_hashable(), 6);
 
             assert_eq!(
                 hash.pairs.len(), expected.len(),
@@ -682,6 +686,48 @@ fn test_hash_literals() {
                 "Eval didn't return Hash. got={:?}",
                 evaluated
             );
+        }
+    }
+}
+
+#[test]
+fn test_hash_index_expressions() {
+    let tests = [
+        (
+            r#"{"foo": 5}["foo"]"#,
+            Some(5)
+        ),
+        (
+            r#"{"foo": 5}["bar"]"#,
+            None
+        ),
+        (
+            r#"let key = "foo"; {"foo": 5}[key]"#,
+            Some(5)
+        ),
+        (
+            r#"{}["foo"]"#,
+            None
+        ),
+        (
+            r#"{5: 5}[5]"#,
+            Some(5)
+        ),
+        (
+            r#"{true: 5}[true]"#,
+            Some(5)
+        ),
+        (
+            r#"{false: 5}[false]"#,
+            Some(5)
+        )
+    ];
+
+    for (input, expected) in &tests {
+        let evaluated = test_eval(input);
+        match expected {
+            Some(num) => test_integer_object(evaluated, *num),
+            None => test_null_object(evaluated),
         }
     }
 }
