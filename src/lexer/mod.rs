@@ -104,8 +104,18 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    fn skip_comment(&mut self) {
+        if self.ch == '#' {
+            while self.ch != '\n' && self.ch != '\r' {
+                self.read_char();
+            }
+            self.read_char();
+        }
+    }
+
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
+        self.skip_comment();
 
         match self.ch {
             '=' => {
