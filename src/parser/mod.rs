@@ -100,6 +100,7 @@ impl<'a> Parser<'a> {
         match self.cur_token.kind() {
             TokenKind::Let => Ok(Statement::Let(Box::new(self.parse_let_statement()?))),
             TokenKind::Return => Ok(Statement::Return(Box::new(self.parse_return_statement()?))),
+            TokenKind::Import => Ok(Statement::Import(Box::new(self.parse_import_statement()?))),
             _ => Ok(Statement::ExprStmt(Box::new(self.parse_expression_statement()?)))
         }
     }
@@ -144,6 +145,31 @@ impl<'a> Parser<'a> {
         }
 
         Ok(stmt)
+    }
+
+    fn parse_import_statement(&mut self) -> Result<ImportStatement, String> {
+        let token = self.cur_token.clone();
+
+        self.next_token()?;
+
+        let path = self.cur_token.get_literal();
+
+        let import = ImportStatement::new(token, &path);
+
+        if let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Semicolon {
+                self.next_token()?;
+            }
+        }
+
+        if let Some(import) = import {
+            Ok(import)
+        } else {
+            Err(format!(
+                "could not parse import statement with the path: {}",
+                &path
+            ))
+        }
     }
 
     fn parse_expression_statement(&mut self) -> Result<ExpressionStatement, String> {

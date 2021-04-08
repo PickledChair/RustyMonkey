@@ -6,6 +6,7 @@ pub enum Node {
     LetStatement(LetStatement),
     ReturnStatement(ReturnStatement),
     BlockStatement(BlockStatement),
+    ImportStatement(ImportStatement),
     Identifier(Identifier),
     IntLiteral(IntegerLiteral),
     PrefixExpr(PrefixExpression),
@@ -70,6 +71,7 @@ impl NodeExt for Program {
 pub enum Statement {
     Let(Box<LetStatement>),
     Return(Box<ReturnStatement>),
+    Import(Box<ImportStatement>),
     ExprStmt(Box<ExpressionStatement>),
 }
 
@@ -78,6 +80,7 @@ impl NodeExt for Statement {
         match self {
             Statement::Let(let_stmt) => let_stmt.token_literal(),
             Statement::Return(ret_stmt) => ret_stmt.token_literal(),
+            Statement::Import(import_stmt) => import_stmt.token_literal(),
             Statement::ExprStmt(expr_stmt) => expr_stmt.token_literal(),
         }
     }
@@ -86,6 +89,7 @@ impl NodeExt for Statement {
         match self {
             Statement::Let(let_stmt) => let_stmt.to_string(),
             Statement::Return(ret_stmt) => ret_stmt.to_string(),
+            Statement::Import(import_stmt) => import_stmt.to_string(),
             Statement::ExprStmt(expr_stmt) => expr_stmt.to_string(),
         }
     }
@@ -94,6 +98,7 @@ impl NodeExt for Statement {
         match self {
             Statement::Let(let_stmt) => let_stmt.into_node(),
             Statement::Return(ret_stmt) => ret_stmt.into_node(),
+            Statement::Import(import_stmt) => import_stmt.into_node(),
             Statement::ExprStmt(expr_stmt) => expr_stmt.into_node(),
         }
     }
@@ -228,6 +233,46 @@ impl NodeExt for BlockStatement {
 }
 
 impl StatementExt for BlockStatement {}
+
+use std::path::PathBuf;
+use std::str::FromStr;
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct ImportStatement {
+    pub token: Token,
+    pub path: PathBuf,
+}
+
+impl ImportStatement {
+    pub fn new(token: Token, path: &str) -> Option<ImportStatement> {
+        let path = PathBuf::from_str(path);
+        if let Ok(path) = path {
+            if path.is_file() && path.exists() {
+                Some(ImportStatement { token, path })
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl NodeExt for ImportStatement {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        self.token.get_literal() + " "
+            + &format!("{}", self.path.display())
+            + ";"
+    }
+
+    fn into_node(self) -> Node {
+        Node::ImportStatement(self)
+    }
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Expression {

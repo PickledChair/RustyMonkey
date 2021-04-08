@@ -1,4 +1,6 @@
 use super::{
+    lexer::*,
+    parser::*,
     ast::*,
     object::{
         object::*,
@@ -88,6 +90,48 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             Some(eval_index_expression(left, index))
         },
         Node::HashLiteral(hash) => eval_hash_literal(hash, env),
+        Node::ImportStatement(import) => {
+            use std::fs::File;
+            use std::io::prelude::*;
+
+            let file = File::open(&import.path);
+            if file.is_err() {
+                return Some(Error::new(format!(
+                    "could not import the source: {}",
+                    import.path.display()
+                )).into());
+            }
+            let mut content = String::new();
+            if file.unwrap().read_to_string(&mut content).is_err() {
+                return Some(Error::new(format!(
+                    "could not read file at importin the source: {}",
+                    import.path.display()
+                )).into());
+            }
+            match Lexer::new(&content) {
+                Ok(lex) => {
+                    let mut p = Parser::new(lex);
+                    let program = p.parse_program();
+                    if p.errors.len() != 0 {
+                        let mut message = String::new();
+                        for error in p.errors.iter() {
+                            message = message + error + "\n";
+                        }
+                        return Some(Error::new(format!(
+                            "parser error at importing source: {}\n{}",
+                            import.path.display(), &message
+                        )).into());
+                    }
+                    eval_program(program, env)
+                },
+                Err(err) => {
+                    Some(Error::new(format!(
+                        "lexer error at importing source: {}\n{}",
+                        import.path.display(), err
+                    )).into())
+                }
+            }
+        },
     }
 }
 

@@ -44,6 +44,7 @@ pub enum TokenKind {
     If,
     Else,
     Return,
+    Import,
 }
 
 impl TokenKind {
@@ -80,6 +81,7 @@ impl TokenKind {
             Self::If => "if",
             Self::Else => "else",
             Self::Return => "return",
+            Self::Import => "import",
         }
     }
 }
@@ -128,6 +130,7 @@ const KEYWORDS: &'static [(&'static str, TokenKind)] = &[
     ("if", TokenKind::If),
     ("else", TokenKind::Else),
     ("return", TokenKind::Return),
+    ("import", TokenKind::Import),
 ];
 
 pub fn lookup_ident<T: AsRef<str>>(ident: T) -> Token {

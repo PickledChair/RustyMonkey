@@ -30,6 +30,7 @@ foo_bar123;
 "hello\t\t\tworld"
 [1, 2];
 {"foo": "bar"}
+import "foo.mk";
 "#;
 
     let test_pairs = [
@@ -124,6 +125,9 @@ foo_bar123;
         (Colon, ":"),
         (Str, "bar"),
         (Rbrace, "}"),
+        (Import, "import"),
+        (Str, "foo.mk"),
+        (Semicolon, ";"),
         (Eof, ""),
     ];
 
