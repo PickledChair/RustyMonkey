@@ -152,6 +152,10 @@ impl<'a> Lexer<'a> {
                 self.read_char();
                 Token::new(TokenKind::Gt, None)
             },
+            ':' => {
+                self.read_char();
+                Token::new(TokenKind::Colon, None)
+            },
             ';' => {
                 self.read_char();
                 Token::new(TokenKind::Semicolon, None)

@@ -190,6 +190,7 @@ impl<'a> Parser<'a> {
             If => self.parse_if_expression()?,
             Function => self.parse_function_literal()?,
             Lbracket => self.parse_array_literal()?,
+            Lbrace => self.parse_hash_literal()?,
             _ => return Err(format!("no prefix parse function for {} found", self.cur_token.kind()))
         };
 
@@ -417,6 +418,34 @@ impl<'a> Parser<'a> {
         Ok(Expression::IndexExpr(Box::new(
             IndexExpression::new(token, left, index)
         )))
+    }
+
+    fn parse_hash_literal(&mut self) -> Result<Expression, String> {
+        let mut hash = HashLiteral::new(self.cur_token.clone());
+
+        while let Some(tok) = self.lex.peek() {
+            if tok.kind() == TokenKind::Rbrace { break; }
+
+            self.next_token()?;
+            let key = self.parse_expression(Lowest)?;
+
+            self.expect_peek(TokenKind::Colon)?;
+
+            self.next_token()?;
+            let value = self.parse_expression(Lowest)?;
+
+            hash.insert(key, value);
+
+            if let Some(tok) = self.lex.peek() {
+                if tok.kind() != TokenKind::Rbrace {
+                    self.expect_peek(TokenKind::Comma)?;
+                }
+            }
+        }
+
+        self.expect_peek(TokenKind::Rbrace)?;
+
+        Ok(Expression::HashLiteral(Box::new(hash)))
     }
 }
 

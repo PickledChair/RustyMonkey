@@ -87,6 +87,7 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             }
             Some(eval_index_expression(left, index))
         },
+        Node::HashLiteral(hash) => eval_hash_literal(hash, env),
     }
 }
 
@@ -365,6 +366,28 @@ fn eval_string_index_expression(monk_str: MonkeyStr, index: Integer) -> Object {
             monk_str.value
         )).into()
     }
+}
+
+use std::collections::BTreeMap;
+
+fn eval_hash_literal(hash_lit: HashLiteral, env: Environment) -> Option<Object> {
+    let mut pairs = BTreeMap::new();
+
+    for (key_node, value_node) in hash_lit.pairs.iter() {
+        let key = eval(key_node.clone().into_node(), env.clone())?;
+        if key.is_error() {
+            return Some(key);
+        }
+
+        let value = eval(value_node.clone().into_node(), env.clone())?;
+        if value.is_error() {
+            return Some(value);
+        }
+
+        pairs.insert(key, value);
+    }
+
+    Some(MonkeyHash::new(pairs).into())
 }
 
 #[cfg(test)]

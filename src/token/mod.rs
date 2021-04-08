@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 pub enum TokenKind {
     Illegal,
     Eof,
@@ -26,6 +26,7 @@ pub enum TokenKind {
 
     // デリミタ
     Comma,
+    Colon,
     Semicolon,
 
     Lparen,
@@ -64,6 +65,7 @@ impl TokenKind {
             Self::Eq => "==",
             Self::NotEq => "!=",
             Self::Comma => ",",
+            Self::Colon => ":",
             Self::Semicolon => ";",
             Self::Lparen => "(",
             Self::Rparen => ")",
@@ -88,7 +90,7 @@ impl fmt::Display for TokenKind {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Ord, PartialOrd)]
 pub struct Token {
     kind: TokenKind,
     literal: Option<String>,

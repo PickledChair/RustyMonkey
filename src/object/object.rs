@@ -15,6 +15,7 @@ pub enum ObjectType {
     FunctionObj,
     BuiltinObj,
     ArrayObj,
+    HashObj,
     ErrorObj,
 }
 
@@ -29,6 +30,7 @@ impl ObjectType {
             Self::FunctionObj => "FUNCTION",
             Self::BuiltinObj => "BUILTIN",
             Self::ArrayObj => "ARRAY",
+            Self::HashObj => "HASH",
             Self::ErrorObj => "ERROR",
         }
     }
@@ -39,7 +41,7 @@ pub trait ObjectExt {
     fn inspect(&self) -> String;
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Object {
     Integer(Integer),
     Bool(Bool),
@@ -48,6 +50,7 @@ pub enum Object {
     Function(Box<Function>),
     Builtin(Builtin),
     Array(Box<Array>),
+    Hash(Box<MonkeyHash>),
     Null(Null),
     Error(Error),
 }
@@ -77,6 +80,7 @@ impl ObjectExt for Object {
             Self::Function(func) => func.get_type(),
             Self::Builtin(builtin) => builtin.get_type(),
             Self::Array(array) => array.get_type(),
+            Self::Hash(hash) => hash.get_type(),
             Self::Null(null) => null.get_type(),
             Self::Error(err) => err.get_type(),
         }
@@ -91,6 +95,7 @@ impl ObjectExt for Object {
             Self::Function(func) => func.inspect(),
             Self::Builtin(builtin) => builtin.inspect(),
             Self::Array(array) => array.inspect(),
+            Self::Hash(hash) => hash.inspect(),
             Self::Null(null) => null.inspect(),
             Self::Error(err) => err.inspect(),
         }
@@ -124,7 +129,7 @@ impl From<Integer> for Object {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Bool {
     pub value: bool,
 }
@@ -145,7 +150,7 @@ impl From<bool> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Null {}
 
 impl ObjectExt for Null {
@@ -164,7 +169,7 @@ impl From<Null> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ReturnValue {
     pub value: Object,
 }
@@ -191,7 +196,7 @@ impl From<ReturnValue> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Error {
     pub message: String,
 }
@@ -218,7 +223,7 @@ impl From<Error> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Function {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
@@ -258,7 +263,7 @@ impl From<Function> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct MonkeyStr {
     pub value: String,
 }
@@ -285,7 +290,7 @@ impl From<MonkeyStr> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BuiltinFunction {
     pub name: &'static str,
     pub f_ptr: fn(Vec<Object>) -> Object
@@ -297,7 +302,7 @@ impl BuiltinFunction {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Builtin {
     pub func: BuiltinFunction,
 }
@@ -326,7 +331,7 @@ impl From<Builtin> for Object {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Array {
     pub elements: Vec<Object>,
 }
@@ -362,5 +367,46 @@ impl ObjectExt for Array {
 impl From<Array> for Object {
     fn from(array: Array) -> Object {
         Object::Array(Box::new(array))
+    }
+}
+
+use std::collections::BTreeMap;
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct MonkeyHash {
+    pub pairs: BTreeMap<Object, Object>
+}
+
+impl MonkeyHash {
+    pub fn new(pairs: BTreeMap<Object, Object>) -> MonkeyHash {
+        MonkeyHash { pairs }
+    }
+}
+
+impl ObjectExt for MonkeyHash {
+    fn get_type(&self) -> ObjectType {
+        ObjectType::HashObj
+    }
+
+    fn inspect(&self) -> String {
+        let mut ret = String::from("{");
+
+        let mut is_first = true;
+        for (key, value) in self.pairs.iter() {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
+            ret = ret + &key.inspect() + ": " + &value.inspect();
+        }
+
+        ret + "}"
+    }
+}
+
+impl From<MonkeyHash> for Object {
+    fn from(hash: MonkeyHash) -> Object {
+        Object::Hash(Box::new(hash))
     }
 }

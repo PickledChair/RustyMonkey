@@ -637,3 +637,51 @@ fn test_string_index_expressions() {
         }
     }
 }
+
+use std::collections::BTreeMap;
+
+#[test]
+fn test_hash_literals() {
+    let input = r#"let two = "two";
+{
+    "one": 10 - 9,
+    two: 1 + 1,
+    "thr" + "ee": 6 / 2,
+    4: 4,
+    true: 5,
+    false: 6
+}"#;
+
+    let evaluated = test_eval(input);
+
+    match evaluated {
+        Object::Hash(hash) => {
+            let mut expected: BTreeMap<Object, i64> = BTreeMap::new();
+            expected.insert(MonkeyStr::new("one".to_string()).into(), 1);
+            expected.insert(MonkeyStr::new("two".to_string()).into(), 2);
+            expected.insert(MonkeyStr::new("three".to_string()).into(), 3);
+            expected.insert(Integer::new(4).into(), 4);
+            expected.insert(TRUE, 5);
+            expected.insert(FALSE, 6);
+
+            assert_eq!(
+                hash.pairs.len(), expected.len(),
+                "Hash has wrong num of pairs. got={}",
+                hash.pairs.len()
+            );
+
+            for (expected_key, expected_value) in expected.iter() {
+                let value = hash.pairs.get(expected_key);
+                assert!(value.is_some(), "no pair for given key in Pairs");
+
+                test_integer_object(value.unwrap().clone(), *expected_value);
+            }
+        },
+        _ => {
+            panic!(
+                "Eval didn't return Hash. got={:?}",
+                evaluated
+            );
+        }
+    }
+}

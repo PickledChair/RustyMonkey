@@ -17,6 +17,7 @@ pub enum Node {
     StrLiteral(StringLiteral),
     ArrayLiteral(ArrayLiteral),
     IndexExpr(IndexExpression),
+    HashLiteral(HashLiteral),
 }
 
 pub trait NodeExt {
@@ -65,7 +66,7 @@ impl NodeExt for Program {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Statement {
     Let(Box<LetStatement>),
     Return(Box<ReturnStatement>),
@@ -98,7 +99,7 @@ impl NodeExt for Statement {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
@@ -131,7 +132,7 @@ impl NodeExt for LetStatement {
 
 impl StatementExt for LetStatement {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ReturnStatement {
     pub token: Token,
     pub ret_value: Expression,
@@ -161,7 +162,7 @@ impl NodeExt for ReturnStatement {
 
 impl StatementExt for ReturnStatement {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Expression,
@@ -192,7 +193,7 @@ impl NodeExt for ExpressionStatement {
 
 impl StatementExt for ExpressionStatement {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct BlockStatement {
     pub token: Token,
     pub statements: Vec<Statement>,
@@ -228,7 +229,7 @@ impl NodeExt for BlockStatement {
 
 impl StatementExt for BlockStatement {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Expression {
     Identifier(Box<Identifier>),
     IntLiteral(Box<IntegerLiteral>),
@@ -241,6 +242,7 @@ pub enum Expression {
     StrLiteral(Box<StringLiteral>),
     ArrayLiteral(Box<ArrayLiteral>),
     IndexExpr(Box<IndexExpression>),
+    HashLiteral(Box<HashLiteral>),
 }
 
 impl NodeExt for Expression {
@@ -257,6 +259,7 @@ impl NodeExt for Expression {
             Expression::StrLiteral(str_lit) => str_lit.token_literal(),
             Expression::ArrayLiteral(array) => array.token_literal(),
             Expression::IndexExpr(index) => index.token_literal(),
+            Expression::HashLiteral(hash) => hash.token_literal(),
         }
     }
 
@@ -273,6 +276,7 @@ impl NodeExt for Expression {
             Expression::StrLiteral(str_lit) => str_lit.to_string(),
             Expression::ArrayLiteral(array) => array.to_string(),
             Expression::IndexExpr(index) => index.to_string(),
+            Expression::HashLiteral(hash) => hash.to_string(),
         }
     }
 
@@ -289,11 +293,12 @@ impl NodeExt for Expression {
             Expression::StrLiteral(str_lit) => str_lit.into_node(),
             Expression::ArrayLiteral(array) => array.into_node(),
             Expression::IndexExpr(index) => index.into_node(),
+            Expression::HashLiteral(hash) => hash.into_node(),
         }
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -322,7 +327,7 @@ impl NodeExt for Identifier {
 
 impl ExpressionExt for Identifier {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
@@ -357,7 +362,7 @@ impl NodeExt for IntegerLiteral {
 
 impl ExpressionExt for IntegerLiteral {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -392,7 +397,7 @@ impl NodeExt for PrefixExpression {
 
 impl ExpressionExt for PrefixExpression {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct InfixExpression {
     pub token: Token,
     pub left: Expression,
@@ -427,7 +432,7 @@ impl NodeExt for InfixExpression {
 
 impl ExpressionExt for InfixExpression {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Boolean {
     pub token: Token,
     pub value: bool,
@@ -460,7 +465,7 @@ impl NodeExt for Boolean {
 
 impl ExpressionExt for Boolean {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IfExpression {
     pub token: Token,
     pub condition: Expression,
@@ -508,7 +513,7 @@ impl NodeExt for IfExpression {
 
 impl ExpressionExt for IfExpression {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FunctionLiteral {
     pub token: Token,
     pub parameters: Vec<Identifier>,
@@ -553,7 +558,7 @@ impl NodeExt for FunctionLiteral {
 
 impl ExpressionExt for FunctionLiteral {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CallExpression {
     pub token: Token,           // '(' トークン
     pub function: Expression,   // Identifier または FunctionLiteral
@@ -596,7 +601,7 @@ impl NodeExt for CallExpression {
 
 impl ExpressionExt for CallExpression {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StringLiteral {
     pub token: Token,
     pub value: String,
@@ -627,7 +632,7 @@ impl NodeExt for StringLiteral {
 
 impl ExpressionExt for StringLiteral {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ArrayLiteral {
     pub token: Token,
     pub elements: Vec<Expression>,
@@ -667,7 +672,7 @@ impl NodeExt for ArrayLiteral {
 
 impl ExpressionExt for ArrayLiteral {}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct IndexExpression {
     pub token: Token,
     pub left: Expression,
@@ -695,6 +700,52 @@ impl NodeExt for IndexExpression {
 
     fn into_node(self) -> Node {
         Node::IndexExpr(self)
+    }
+}
+
+use std::collections::BTreeMap;
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct HashLiteral {
+    pub token: Token,
+    pub pairs: BTreeMap<Expression, Expression>,
+}
+
+impl HashLiteral {
+    pub fn new(token: Token) -> HashLiteral {
+        HashLiteral {
+            token, pairs: BTreeMap::new()
+        }
+    }
+
+    pub fn insert(&mut self, key: Expression, value: Expression) {
+        self.pairs.insert(key, value);
+    }
+}
+
+impl NodeExt for HashLiteral {
+    fn token_literal(&self) -> String {
+        self.token.get_literal()
+    }
+
+    fn to_string(&self) -> String {
+        let mut ret = String::from("{");
+
+        let mut is_first = true;
+        for (key, value) in self.pairs.iter() {
+            if is_first {
+                is_first = false;
+            } else {
+                ret = ret + ", ";
+            }
+            ret = ret + &key.to_string() + ":" + &value.to_string();
+        }
+
+        ret + "}"
+    }
+
+    fn into_node(self) -> Node {
+        Node::HashLiteral(self)
     }
 }
 

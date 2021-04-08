@@ -1068,3 +1068,191 @@ fn test_parsing_index_expressions() {
         }
     }
 }
+
+use std::collections::HashMap;
+
+#[test]
+fn test_parsing_hash_literals_string_keys() {
+    let input = r#"{"one": 1, "two": 2, "three": 3}"#;
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::HashLiteral(hash_lit) => {
+                    assert_eq!(
+                        hash_lit.pairs.len(), 3,
+                        "hash_lit.pairs has wrong length. got={}",
+                        hash_lit.pairs.len()
+                    );
+
+                    let mut expected = HashMap::new();
+                    expected.insert("one", 1);
+                    expected.insert("two", 2);
+                    expected.insert("three", 3);
+
+                    for (key, value) in hash_lit.pairs.iter() {
+                        match key {
+                            Expression::StrLiteral(str_lit) => {
+                                let expected_value = expected.get(str_lit.value.as_str());
+                                if let Some(expected_value) = expected_value {
+                                    test_integer_literal(value.clone(), *expected_value);
+                                } else {
+                                    panic!("value is not found against key {}", str_lit.value);
+                                }
+                            },
+                            other => {
+                                panic!(
+                                    "key is not Expression::StrLiteral(_). got={:?}",
+                                    other
+                                );
+                            }
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::HashLiteral(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+fn test_parsing_empty_hash_literal() {
+    let input = "{}";
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::HashLiteral(hash) => {
+                    assert_eq!(
+                        hash.pairs.len(), 0,
+                        "hash.pairs has wrong length. got={}",
+                        hash.pairs.len()
+                    );
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::HashLiteral(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}
+
+#[test]
+fn test_parsing_hash_literal_with_expressions() {
+    let input = r#"{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"#;
+
+    let l = Lexer::new(input).unwrap();
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
+    check_parser_errors(&p);
+
+    let stmt = program.statements[0].clone();
+    match stmt {
+        Statement::ExprStmt(expr_stmt) => {
+            let expr = expr_stmt.expression;
+            match expr {
+                Expression::HashLiteral(hash) => {
+                    assert_eq!(
+                        hash.pairs.len(), 3,
+                        "hash.pairs has wrong length. got={}",
+                        hash.pairs.len()
+                    );
+
+                    let tests_contents = [
+                        (
+                            "one",
+                            Expected::Int64(0),
+                            "+",
+                            Expected::Int64(1)
+                        ),
+                        (
+                            "two",
+                            Expected::Int64(10),
+                            "-",
+                            Expected::Int64(8)
+                        ),
+                        (
+                            "three",
+                            Expected::Int64(15),
+                            "/",
+                            Expected::Int64(5)
+                        )
+                    ];
+
+                    let mut tests = HashMap::new();
+                    for (key, left, ope, right) in &tests_contents {
+                        tests.insert(*key, (left, ope, right));
+                    }
+
+                    for (key, value) in hash.pairs.iter() {
+                        match key {
+                            Expression::StrLiteral(str_lit) => {
+                                let test_args = tests.get(str_lit.value.as_str());
+                                if let Some(args) = test_args {
+                                    test_infix_expression(
+                                        value.clone(),
+                                        args.0,
+                                        args.1.to_string(),
+                                        args.2
+                                    );
+                                }
+                            },
+                            _ => {
+                                panic!(
+                                    "key is not Expression::StrLiteral(_). got={:?}",
+                                    key
+                                );
+                            }
+                        }
+                    }
+                },
+                _ => {
+                    panic!(
+                        "expr not Expression::HashLiteral(_). got={:?}",
+                        expr
+                    );
+                }
+            }
+        },
+        _ => {
+            panic!(
+                "stmt not Statement::ExprStmt(_). got={:?}",
+                stmt
+            );
+        }
+    }
+}

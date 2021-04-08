@@ -4,17 +4,17 @@ use super::{
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 struct EnvironmentContent {
-    pub store: HashMap<String, Object>,
+    pub store: BTreeMap<String, Object>,
     pub outer: Option<Environment>,
 }
 
 impl EnvironmentContent {
     pub fn new(outer: Option<Environment>) -> EnvironmentContent {
-        EnvironmentContent { store: HashMap::new(), outer }
+        EnvironmentContent { store: BTreeMap::new(), outer }
     }
 
     pub fn get(&self, name: &str) -> Option<Object> {
@@ -35,7 +35,7 @@ impl EnvironmentContent {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Environment(Rc<RefCell<EnvironmentContent>>);
 
 impl Environment {

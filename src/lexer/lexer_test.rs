@@ -29,6 +29,7 @@ foo_bar123;
 "hello\n world"
 "hello\t\t\tworld"
 [1, 2];
+{"foo": "bar"}
 "#;
 
     let test_pairs = [
@@ -118,6 +119,11 @@ foo_bar123;
         (Int, "2"),
         (Rbracket, "]"),
         (Semicolon, ";"),
+        (Lbrace, "{"),
+        (Str, "foo"),
+        (Colon, ":"),
+        (Str, "bar"),
+        (Rbrace, "}"),
         (Eof, ""),
     ];
 

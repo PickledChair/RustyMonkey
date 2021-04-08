@@ -54,7 +54,8 @@ pub fn builtin_str(args: Vec<Object>) -> Object {
         Object::ReturnValue(ret) => MonkeyStr::new(ret.inspect()).into(),
         Object::Builtin(builtin) => MonkeyStr::new(builtin.inspect()).into(),
         Object::Bool(boolean) => MonkeyStr::new(boolean.inspect()).into(),
-        Object::Array(array) => MonkeyStr::new(array.inspect()).into()
+        Object::Array(array) => MonkeyStr::new(array.inspect()).into(),
+        Object::Hash(hash) => MonkeyStr::new(hash.inspect()).into(),
     }
 }
 
