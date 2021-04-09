@@ -151,7 +151,7 @@ impl<'a> Parser<'a> {
     fn parse_import_statement(&mut self, base_dir: &Path) -> Result<ImportStatement, String> {
         let token = self.cur_token.clone();
 
-        self.next_token()?;
+        self.expect_peek(TokenKind::Str)?;
 
         let path = self.cur_token.get_literal();
 
