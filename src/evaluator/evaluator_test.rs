@@ -420,12 +420,12 @@ fn test_builtin_functions() {
         ("int(str(40)) + int(str(2))", Expected::Int64(42)),
         ("str(int(40)) + str(int(2))", Expected::Str("402".to_string())),
 
-        // `head` tests
-        ("head([1,2,3])", Expected::Int64(1)),
-        ("head([])", Expected::Null),
-        (r#"head("hello")"#, Expected::Str("h".to_string())),
-        (r#"head("")"#, Expected::Null),
-        ("head(1)", Expected::Str("argument to `head` must be ARRAY or STRING, got INTEGER".to_string())),
+        // `first` tests
+        ("first([1,2,3])", Expected::Int64(1)),
+        ("first([])", Expected::Null),
+        (r#"first("hello")"#, Expected::Str("h".to_string())),
+        (r#"first("")"#, Expected::Null),
+        ("first(1)", Expected::Str("argument to `first` must be ARRAY or STRING, got INTEGER".to_string())),
 
         // `last` tests
         ("last([1,2,3])", Expected::Int64(3)),
@@ -434,19 +434,19 @@ fn test_builtin_functions() {
         (r#"last("")"#, Expected::Null),
         ("last(1)", Expected::Str("argument to `last` must be ARRAY or STRING, got INTEGER".to_string())),
 
-        // `tail` tests
-        ("let a = [1, 2, 3, 4]; tail(a);", Expected::Array(vec![Expected::Int64(2), Expected::Int64(3), Expected::Int64(4)])),
-        ("let a = [1, 2, 3, 4]; tail(tail(a));", Expected::Array(vec![Expected::Int64(3), Expected::Int64(4)])),
-        ("let a = [1, 2, 3, 4]; tail(tail(tail(a)));", Expected::Array(vec![Expected::Int64(4)])),
-        ("let a = [1, 2, 3, 4]; tail(tail(tail(tail(a))));", Expected::Array(vec![])),
-        ("let a = [1, 2, 3, 4]; tail(tail(tail(tail(tail(a)))));", Expected::Null),
+        // `rest` tests
+        ("let a = [1, 2, 3, 4]; rest(a);", Expected::Array(vec![Expected::Int64(2), Expected::Int64(3), Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; rest(rest(a));", Expected::Array(vec![Expected::Int64(3), Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; rest(rest(rest(a)));", Expected::Array(vec![Expected::Int64(4)])),
+        ("let a = [1, 2, 3, 4]; rest(rest(rest(rest(a))));", Expected::Array(vec![])),
+        ("let a = [1, 2, 3, 4]; rest(rest(rest(rest(rest(a)))));", Expected::Null),
 
-        (r#"let a = "hello"; tail(a);"#, Expected::Str("ello".to_string())),
-        (r#"let a = "hello"; tail(tail(a));"#, Expected::Str("llo".to_string())),
-        (r#"let a = "hello"; tail(tail(tail(a)));"#, Expected::Str("lo".to_string())),
-        (r#"let a = "hello"; tail(tail(tail(tail(a))));"#, Expected::Str("o".to_string())),
-        (r#"let a = "hello"; tail(tail(tail(tail(tail(a)))));"#, Expected::Str("".to_string())),
-        (r#"let a = "hello"; tail(tail(tail(tail(tail(tail(a))))));"#, Expected::Null),
+        (r#"let a = "hello"; rest(a);"#, Expected::Str("ello".to_string())),
+        (r#"let a = "hello"; rest(rest(a));"#, Expected::Str("llo".to_string())),
+        (r#"let a = "hello"; rest(rest(rest(a)));"#, Expected::Str("lo".to_string())),
+        (r#"let a = "hello"; rest(rest(rest(rest(a))));"#, Expected::Str("o".to_string())),
+        (r#"let a = "hello"; rest(rest(rest(rest(rest(a)))));"#, Expected::Str("".to_string())),
+        (r#"let a = "hello"; rest(rest(rest(rest(rest(rest(a))))));"#, Expected::Null),
 
         // `init` tests
         ("let a = [1, 2, 3, 4]; init(a);", Expected::Array(vec![Expected::Int64(1), Expected::Int64(2), Expected::Int64(3)])),

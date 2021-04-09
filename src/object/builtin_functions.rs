@@ -5,12 +5,14 @@ pub fn search_builtins(name: &str) -> Option<Object> {
         "len" => Some(Builtin::new(BuiltinFunction::new("len", builtin_len)).into()),
         "str" => Some(Builtin::new(BuiltinFunction::new("str", builtin_str)).into()),
         "int" => Some(Builtin::new(BuiltinFunction::new("int", builtin_int)).into()),
-        "head" => Some(Builtin::new(BuiltinFunction::new("head", builtin_head)).into()),
+        "first" => Some(Builtin::new(BuiltinFunction::new("first", builtin_first)).into()),
         "last" => Some(Builtin::new(BuiltinFunction::new("last", builtin_last)).into()),
-        "tail" => Some(Builtin::new(BuiltinFunction::new("tail", builtin_tail)).into()),
+        "rest" => Some(Builtin::new(BuiltinFunction::new("rest", builtin_rest)).into()),
         "init" => Some(Builtin::new(BuiltinFunction::new("init", builtin_init)).into()),
         "push" => Some(Builtin::new(BuiltinFunction::new("push", builtin_push)).into()),
         "puts" => Some(Builtin::new(BuiltinFunction::new("puts", builtin_puts)).into()),
+        "print" => Some(Builtin::new(BuiltinFunction::new("print", builtin_print)).into()),
+        "readline" => Some(Builtin::new(BuiltinFunction::new("readline", builtin_readline)).into()),
         _ => None
     }
 }
@@ -86,7 +88,7 @@ pub fn builtin_int(args: Vec<Object>) -> Object {
     }
 }
 
-pub fn builtin_head(args: Vec<Object>) -> Object {
+pub fn builtin_first(args: Vec<Object>) -> Object {
     if let Some(err) = args_len_error(args.len(), 1) {
         return err;
     }
@@ -109,7 +111,7 @@ pub fn builtin_head(args: Vec<Object>) -> Object {
         }
         other => {
             Error::new(format!(
-                "argument to `head` must be ARRAY or STRING, got {}",
+                "argument to `first` must be ARRAY or STRING, got {}",
                 other.get_type().as_str()
             )).into()
         }
@@ -147,7 +149,7 @@ pub fn builtin_last(args: Vec<Object>) -> Object {
     }
 }
 
-pub fn builtin_tail(args: Vec<Object>) -> Object {
+pub fn builtin_rest(args: Vec<Object>) -> Object {
     if let Some(err) = args_len_error(args.len(), 1) {
         return err;
     }
@@ -174,7 +176,7 @@ pub fn builtin_tail(args: Vec<Object>) -> Object {
         },
         other => {
             Error::new(format!(
-                "argument to `tail` must be ARRAY or STRING, got {}",
+                "argument to `rest` must be ARRAY or STRING, got {}",
                 other.get_type().as_str()
             )).into()
         }
@@ -238,4 +240,29 @@ pub fn builtin_puts(args: Vec<Object>) -> Object {
         println!("{}", arg.inspect());
     }
     NULL
+}
+
+pub fn builtin_print(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+    use std::io::{stdout, Write};
+    print!("{}", args[0].inspect());
+    stdout().flush().unwrap();
+    NULL
+}
+
+pub fn builtin_readline(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 0) {
+        return err;
+    }
+    use std::io;
+    let mut buffer = String::new();
+    let stdin = io::stdin();
+    if stdin.read_line(&mut buffer).is_ok() {
+        let result = buffer.trim_end();
+        MonkeyStr::new(result.to_string()).into()
+    } else {
+        NULL
+    }
 }

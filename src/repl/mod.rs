@@ -9,7 +9,7 @@ use super::{
     evaluator::*,
 };
 
-use std::io::{self, BufRead, Write};
+use std::io::{self, Write};
 
 const PROMPT: &'static [u8] = b">> ";
 
@@ -26,13 +26,14 @@ const MONKEY_FACE: &'static [u8] = br#"            __,__
            '-----'
 "#;
 
-pub fn start<R: BufRead, W: Write>(in_: &mut R, out: &mut W) -> io::Result<()> {
+pub fn start<W: Write>(out: &mut W) -> io::Result<()> {
     let env = Environment::new();
     loop {
         out.write_all(PROMPT)?;
         out.flush()?;
+        let stdin = io::stdin();
         let mut line = String::new();
-        in_.read_line(&mut line)?;
+        stdin.read_line(&mut line)?;
 
         if line.contains("quit") || line.contains("exit") {
             break;
