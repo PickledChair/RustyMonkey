@@ -234,8 +234,7 @@ impl NodeExt for BlockStatement {
 
 impl StatementExt for BlockStatement {}
 
-use std::path::PathBuf;
-use std::str::FromStr;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ImportStatement {
@@ -244,14 +243,21 @@ pub struct ImportStatement {
 }
 
 impl ImportStatement {
-    pub fn new(token: Token, path: &str) -> Option<ImportStatement> {
-        let path = PathBuf::from_str(path);
-        if let Ok(path) = path {
-            if path.is_file() && path.exists() {
-                Some(ImportStatement { token, path })
+    pub fn new(token: Token, path: &str, base_dir: &Path) -> Option<ImportStatement> {
+        let mut path = PathBuf::from(path);
+
+        if !path.is_absolute() {
+            if path.is_relative() {
+                let mut tmp_pathbuf = base_dir.to_path_buf();
+                tmp_pathbuf.push(path);
+                path = tmp_pathbuf;
             } else {
-                None
+                return None;
             }
+        }
+
+        if path.is_file() && path.exists() {
+            Some(ImportStatement { token, path })
         } else {
             None
         }

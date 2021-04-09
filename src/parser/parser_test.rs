@@ -1,6 +1,8 @@
 use crate::{ast::*, lexer::*};
 use super::*;
 
+use std::env;
+
 #[test]
 fn test_let_statements() {
     let tests = [
@@ -14,7 +16,7 @@ fn test_let_statements() {
     for (input, expected_ident, expected_value) in &tests {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let program = p.parse_program();
+        let program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         assert_eq!(
@@ -75,7 +77,7 @@ fn test_return_statements() {
     for (input, expected) in &tests {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let program = p.parse_program();
+        let program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         assert_eq!(
@@ -118,7 +120,7 @@ fn test_identifier_expression() {
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
 
-    let mut program = p.parse_program();
+    let mut program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -150,7 +152,7 @@ fn test_integer_literal_expression() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let mut program = p.parse_program();
+    let mut program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -187,7 +189,7 @@ fn test_boolean_literal_expression() {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
 
-        let mut program = p.parse_program();
+        let mut program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         assert_eq!(
@@ -334,7 +336,7 @@ fn test_parsing_prefix_expressions() {
     for (input, operator, int_value) in prefix_tests.iter() {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let mut program = p.parse_program();
+        let mut program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         assert_eq!(
@@ -395,7 +397,7 @@ fn test_parsing_infix_expression() {
     for (input, left_value, operator, right_value) in infix_tests.iter() {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let mut program = p.parse_program();
+        let mut program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         assert_eq!(
@@ -539,7 +541,7 @@ fn test_operator_precedence_parsing() {
     for (input, expected) in tests.iter() {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let program = p.parse_program();
+        let program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         let actual = program.to_string();
@@ -555,7 +557,7 @@ pub fn test_if_expression() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let mut program = p.parse_program();
+    let mut program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -628,7 +630,7 @@ pub fn test_if_else_expression() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let mut program = p.parse_program();
+    let mut program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -716,7 +718,7 @@ fn test_function_literal_parsing() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let mut program = p.parse_program();
+    let mut program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -798,7 +800,7 @@ fn test_function_parameter_parsing() {
     for (input, expected_params) in &tests {
         let l = Lexer::new(input).unwrap();
         let mut p = Parser::new(l);
-        let program = p.parse_program();
+        let program = p.parse_program(&env::current_dir().unwrap());
         check_parser_errors(&p);
 
         let stmt = program.statements[0].clone();
@@ -844,7 +846,7 @@ fn test_call_expression_parsing() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     assert_eq!(
@@ -907,7 +909,7 @@ fn test_string_literal_expression() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -945,7 +947,7 @@ fn test_parsing_array_literals() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -997,7 +999,7 @@ fn test_parsing_empty_array_literal() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -1035,7 +1037,7 @@ fn test_parsing_index_expressions() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -1077,7 +1079,7 @@ fn test_parsing_hash_literals_string_keys() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -1139,7 +1141,7 @@ fn test_parsing_empty_hash_literal() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();
@@ -1177,7 +1179,7 @@ fn test_parsing_hash_literal_with_expressions() {
 
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let program = p.parse_program(&env::current_dir().unwrap());
     check_parser_errors(&p);
 
     let stmt = program.statements[0].clone();

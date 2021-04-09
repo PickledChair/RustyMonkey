@@ -38,7 +38,8 @@ fn test_eval_integer_expression() {
 fn test_eval(input: &str) -> Object {
     let l = Lexer::new(input).unwrap();
     let mut p = Parser::new(l);
-    let program = p.parse_program();
+    let current_dir = std::env::current_dir().unwrap();
+    let program = p.parse_program(&current_dir);
     let env = Environment::new();
 
     let evaluated = eval(program.into_node(), env);

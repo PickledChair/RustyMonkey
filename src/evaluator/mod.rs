@@ -111,18 +111,25 @@ pub fn eval(node: Node, env: Environment) -> Option<Object> {
             match Lexer::new(&content) {
                 Ok(lex) => {
                     let mut p = Parser::new(lex);
-                    let program = p.parse_program();
-                    if p.errors.len() != 0 {
-                        let mut message = String::new();
-                        for error in p.errors.iter() {
-                            message = message + error + "\n";
+                    if let Some(base_dir) = import.path.parent() {
+                        let program = p.parse_program(base_dir);
+                        if p.errors.len() != 0 {
+                            let mut message = String::new();
+                            for error in p.errors.iter() {
+                                message = message + error + "\n";
+                            }
+                            return Some(Error::new(format!(
+                                "parser error at importing source: {}\n{}",
+                                import.path.display(), &message
+                            )).into());
                         }
-                        return Some(Error::new(format!(
-                            "parser error at importing source: {}\n{}",
-                            import.path.display(), &message
-                        )).into());
+                        eval_program(program, env)
+                    } else {
+                        Some(Error::new(format!(
+                            "could not get the parent directory of the source: {}",
+                            import.path.display()
+                        )).into())
                     }
-                    eval_program(program, env)
                 },
                 Err(err) => {
                     Some(Error::new(format!(

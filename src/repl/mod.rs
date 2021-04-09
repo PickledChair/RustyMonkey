@@ -28,6 +28,7 @@ const MONKEY_FACE: &'static [u8] = br#"            __,__
 
 pub fn start<W: Write>(out: &mut W) -> io::Result<()> {
     let env = Environment::new();
+    let current_dir = std::env::current_dir()?;
     loop {
         out.write_all(PROMPT)?;
         out.flush()?;
@@ -43,7 +44,7 @@ pub fn start<W: Write>(out: &mut W) -> io::Result<()> {
             Ok(lex) => {
                 let mut p = Parser::new(lex);
 
-                let program = p.parse_program();
+                let program = p.parse_program(&current_dir);
                 if p.errors.len() != 0 {
                     print_parser_errors(out, p.errors)?;
                     continue;
