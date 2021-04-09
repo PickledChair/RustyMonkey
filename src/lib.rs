@@ -5,3 +5,4 @@ pub mod parser;
 pub mod object;
 pub mod evaluator;
 pub mod repl;
+pub mod execution;
