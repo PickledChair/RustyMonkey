@@ -31,6 +31,8 @@ foo_bar123;
 [1, 2];
 {"foo": "bar"}
 import "foo.mk";
+# This is ignored.
+    # This is ignored too.
 10 <= 10;
 10 >= 9;
 "#;

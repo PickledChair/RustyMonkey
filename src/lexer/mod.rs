@@ -113,9 +113,16 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next_token(&mut self) -> Token {
+    fn skip_reading(&mut self) {
         self.skip_whitespace();
-        self.skip_comment();
+        if self.ch == '#' {
+            self.skip_comment();
+            self.skip_reading();
+        }
+    }
+
+    pub fn next_token(&mut self) -> Token {
+        self.skip_reading();
 
         match self.ch {
             '=' => {
