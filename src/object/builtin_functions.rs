@@ -278,26 +278,18 @@ pub fn builtin_readfile(args: Vec<Object>) -> Object {
         Object::Str(monk_str) => {
             let path = PathBuf::from(monk_str.value);
             if !path.is_file() || !path.exists() {
-                return Error::new(format!(
-                    "invalid file path: {}", path.display()
-                )).into();
+                return NULL;
             }
             use std::fs::File;
             use std::io::prelude::*;
 
             let file = File::open(&path);
             if file.is_err() {
-                return Error::new(format!(
-                    "could not import the source: {}",
-                    path.display()
-                )).into();
+                return NULL;
             }
             let mut content = String::new();
             if file.unwrap().read_to_string(&mut content).is_err() {
-                return Error::new(format!(
-                    "could not read file at importing the source: {}",
-                    path.display()
-                )).into();
+                return NULL;
             }
 
             MonkeyStr::new(content).into()

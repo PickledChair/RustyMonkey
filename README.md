@@ -156,9 +156,9 @@ my input
 >> # 指定されたファイルをテキストモードで開き、ファイルの内容を文字列で返します
 >> readfile("test.txt")
 => ok
->> # ファイルが見つからない場合はエラーを返します
+>> # ファイルが見つからない場合は null を返します
 >> readfile("hoge.txt")
-=> ERROR: invalid file path: hoge.txt
+=> null
 ```
 
 
