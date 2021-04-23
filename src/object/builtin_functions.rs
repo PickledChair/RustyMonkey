@@ -13,7 +13,7 @@ pub fn search_builtins(name: &str) -> Option<Object> {
         "puts" => Some(Builtin::new(BuiltinFunction::new("puts", builtin_puts)).into()),
         "print" => Some(Builtin::new(BuiltinFunction::new("print", builtin_print)).into()),
         "readline" => Some(Builtin::new(BuiltinFunction::new("readline", builtin_readline)).into()),
-        "readfile" => Some(Builtin::new(BuiltinFunction::new("readefile", builtin_readfile)).into()),
+        "readfile" => Some(Builtin::new(BuiltinFunction::new("readfile", builtin_readfile)).into()),
         "writefile" => Some(Builtin::new(BuiltinFunction::new("writefile", builtin_writefile)).into()),
         _ => None
     }
