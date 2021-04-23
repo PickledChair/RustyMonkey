@@ -13,6 +13,8 @@ pub fn search_builtins(name: &str) -> Option<Object> {
         "puts" => Some(Builtin::new(BuiltinFunction::new("puts", builtin_puts)).into()),
         "print" => Some(Builtin::new(BuiltinFunction::new("print", builtin_print)).into()),
         "readline" => Some(Builtin::new(BuiltinFunction::new("readline", builtin_readline)).into()),
+        "readfile" => Some(Builtin::new(BuiltinFunction::new("readefile", builtin_readfile)).into()),
+        "writefile" => Some(Builtin::new(BuiltinFunction::new("writefile", builtin_writefile)).into()),
         _ => None
     }
 }
@@ -264,5 +266,74 @@ pub fn builtin_readline(args: Vec<Object>) -> Object {
         MonkeyStr::new(result.to_string()).into()
     } else {
         NULL
+    }
+}
+
+pub fn builtin_readfile(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 1) {
+        return err;
+    }
+    use std::path::PathBuf;
+    match args[0].clone() {
+        Object::Str(monk_str) => {
+            let path = PathBuf::from(monk_str.value);
+            if !path.is_file() || !path.exists() {
+                return Error::new(format!(
+                    "invalid file path: {}", path.display()
+                )).into();
+            }
+            use std::fs::File;
+            use std::io::prelude::*;
+
+            let file = File::open(&path);
+            if file.is_err() {
+                return Error::new(format!(
+                    "could not import the source: {}",
+                    path.display()
+                )).into();
+            }
+            let mut content = String::new();
+            if file.unwrap().read_to_string(&mut content).is_err() {
+                return Error::new(format!(
+                    "could not read file at importing the source: {}",
+                    path.display()
+                )).into();
+            }
+
+            MonkeyStr::new(content).into()
+        },
+        other => {
+            Error::new(format!(
+                "argument to `readfile` must be STRING, got {}",
+                other.get_type().as_str()
+            )).into()
+        }
+    }
+}
+
+pub fn builtin_writefile(args: Vec<Object>) -> Object {
+    if let Some(err) = args_len_error(args.len(), 2) {
+        return err;
+    }
+    match (args[0].clone(), args[1].clone()) {
+        (Object::Str(path_str), Object::Str(content_str)) => {
+            use std::path::PathBuf;
+            use std::fs;
+            let path = PathBuf::from(path_str.value);
+            if fs::write(&path, content_str.value).is_err() {
+                Error::new(format!(
+                    "could not write into the file: {}",
+                    path.display()
+                )).into()
+            } else {
+                NULL
+            }
+        },
+        (fst, snd) => {
+            Error::new(format!(
+                "argument to `writefile` must be STRING and STRING, got {} and {}",
+                fst.get_type().as_str(), snd.get_type().as_str()
+            )).into()
+        }
     }
 }
