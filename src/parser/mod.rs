@@ -27,6 +27,8 @@ fn get_precedence(kind: TokenKind) -> Precedence {
         TokenKind::NotEq => Equals,
         TokenKind::Lt => LessGreater,
         TokenKind::Gt => LessGreater,
+        TokenKind::Le => LessGreater,
+        TokenKind::Ge => LessGreater,
         TokenKind::Plus => Sum,
         TokenKind::Minus => Sum,
         TokenKind::Slash => Product,
@@ -226,7 +228,7 @@ impl<'a> Parser<'a> {
                 let peek_kind = tok.kind();
                 if peek_kind != Semicolon && prec < get_precedence(peek_kind) {
                     match peek_kind {
-                        Plus | Minus | Slash | Asterisk | Eq | NotEq | Lt | Gt => {
+                        Plus | Minus | Slash | Asterisk | Eq | NotEq | Lt | Gt | Le | Ge => {
                             self.next_token()?;
 
                             left_exp = self.parse_infix_expression(left_exp, base_dir)?;

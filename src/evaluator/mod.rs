@@ -261,6 +261,8 @@ fn eval_integer_infix_expression(
         ">" => (left_val > right_val).into(),
         "==" => (left_val == right_val).into(),
         "!=" => (left_val != right_val).into(),
+        "<=" => (left_val <= right_val).into(),
+        ">=" => (left_val >= right_val).into(),
         _ => Error::new(format!(
             "unknown operator: {} {} {}",
             left.get_type().as_str(),

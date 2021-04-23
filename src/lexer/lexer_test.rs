@@ -31,6 +31,8 @@ foo_bar123;
 [1, 2];
 {"foo": "bar"}
 import "foo.mk";
+10 <= 10;
+10 >= 9;
 "#;
 
     let test_pairs = [
@@ -127,6 +129,14 @@ import "foo.mk";
         (Rbrace, "}"),
         (Import, "import"),
         (Str, "foo.mk"),
+        (Semicolon, ";"),
+        (Int, "10"),
+        (Le, "<="),
+        (Int, "10"),
+        (Semicolon, ";"),
+        (Int, "10"),
+        (Ge, ">="),
+        (Int, "9"),
         (Semicolon, ";"),
         (Eof, ""),
     ];

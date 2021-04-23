@@ -389,6 +389,8 @@ fn test_parsing_infix_expression() {
         ("5 < 5;", Expected::Int64(5), "<", Expected::Int64(5)),
         ("5 == 5;", Expected::Int64(5), "==", Expected::Int64(5)),
         ("5 != 5;", Expected::Int64(5), "!=", Expected::Int64(5)),
+        ("10 <= 10;", Expected::Int64(10), "<=", Expected::Int64(10)),
+        ("10 >= 9;", Expected::Int64(10), ">=", Expected::Int64(9)),
         ("true == true", Expected::Bool(true), "==", Expected::Bool(true)),
         ("true != false", Expected::Bool(true), "!=", Expected::Bool(false)),
         ("false == false", Expected::Bool(false), "==", Expected::Bool(false)),
@@ -473,8 +475,16 @@ fn test_operator_precedence_parsing() {
             "((5 > 4) == (3 < 4))"
         ),
         (
+            "5 >= 4 == 3 <= 4",
+            "((5 >= 4) == (3 <= 4))"
+        ),
+        (
             "5 < 4 != 3 > 4",
             "((5 < 4) != (3 > 4))"
+        ),
+        (
+            "5 <= 4 != 3 >= 4",
+            "((5 <= 4) != (3 >= 4))"
         ),
         (
             "3 + 4 * 5 == 3 * 1 + 4 * 5",

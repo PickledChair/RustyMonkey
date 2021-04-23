@@ -155,12 +155,24 @@ impl<'a> Lexer<'a> {
                 Token::new(TokenKind::Asterisk, None)
             },
             '<' => {
-                self.read_char();
-                Token::new(TokenKind::Lt, None)
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    self.read_char();
+                    Token::new(TokenKind::Le, None)
+                } else {
+                    self.read_char();
+                    Token::new(TokenKind::Lt, None)
+                }
             },
             '>' => {
-                self.read_char();
-                Token::new(TokenKind::Gt, None)
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    self.read_char();
+                    Token::new(TokenKind::Ge, None)
+                } else {
+                    self.read_char();
+                    Token::new(TokenKind::Gt, None)
+                }
             },
             ':' => {
                 self.read_char();

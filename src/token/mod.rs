@@ -24,6 +24,9 @@ pub enum TokenKind {
     Eq,             // ==
     NotEq,          // !=
 
+    Le,             // <=
+    Ge,             // >=
+
     // デリミタ
     Comma,
     Colon,
@@ -65,6 +68,8 @@ impl TokenKind {
             Self::Gt => ">",
             Self::Eq => "==",
             Self::NotEq => "!=",
+            Self::Le => "<=",
+            Self::Ge => ">=",
             Self::Comma => ",",
             Self::Colon => ":",
             Self::Semicolon => ";",
