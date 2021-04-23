@@ -49,8 +49,8 @@ pub enum Object {
     ReturnValue(Box<ReturnValue>),
     Function(Box<Function>),
     Builtin(Builtin),
-    Array(Box<Array>),
-    Hash(Box<MonkeyHash>),
+    Array(Array),
+    Hash(MonkeyHash),
     Null(Null),
     Error(Error),
 }
@@ -413,7 +413,7 @@ impl ObjectExt for Array {
 
 impl From<Array> for Object {
     fn from(array: Array) -> Object {
-        Object::Array(Box::new(array))
+        Object::Array(array)
     }
 }
 
@@ -454,6 +454,6 @@ impl ObjectExt for MonkeyHash {
 
 impl From<MonkeyHash> for Object {
     fn from(hash: MonkeyHash) -> Object {
-        Object::Hash(Box::new(hash))
+        Object::Hash(hash)
     }
 }

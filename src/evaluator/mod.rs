@@ -376,13 +376,13 @@ fn unwrap_return_value(obj: Object) -> Object {
 fn eval_index_expression(left: Object, index: Object) -> Object {
     match (left, index) {
         (Object::Array(array), Object::Integer(integer)) => {
-            eval_array_index_expression(*array, integer)
+            eval_array_index_expression(array, integer)
         },
         (Object::Str(monk_str), Object::Integer(integer)) => {
             eval_string_index_expression(monk_str, integer)
         },
         (Object::Hash(hash), index) => {
-            eval_hash_index_expression(*hash, index)
+            eval_hash_index_expression(hash, index)
         },
         (left, _) => {
             Error::new(format!(
